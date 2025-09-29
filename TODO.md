@@ -20,6 +20,9 @@ Use ✅ when done, keep lines short and actionable.
 ---
 
 ## Near-Term Improvements
+- [ ] Edit Goal fields
+- [ ] Edit Task Fields
+- [ ] Tasks filter for Done today: No  to be first
 - [ ] Undo option after deleting a goal (snackbar or banner)
 - [ ] Reset data (dev-only) to clear storage and reseed demo
 - [ ] Demo seed goals only if storage is empty
@@ -29,6 +32,7 @@ Use ✅ when done, keep lines short and actionable.
 ---
 
 ## Notifications (Later)
+- [ ] Procrastination prevention notifications (not done then keep sending, user determined frequency)
 - [ ] Daily reminders per sub-goal (e.g., remind at 8:00 PM)
 - [ ] Quiet hours (don’t ping after certain time)
 
