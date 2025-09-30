@@ -68,7 +68,7 @@ Use ✅ when done, keep lines short and actionable.
 - [ ] Analytics: track most vs least completed goals
 
 ## Enhancements
-- [ ] save dates as strict Date type rather than ISO string
+- [x] save dates as strict Date type rather than ISO string ✅
 - [ ] at some point maybe we should add a limit of 365 for radar chart data points per goal
 - [ ] would be cool for the radar chart fill to be a gradient with respect to the vertex colours
 - [ ] Fix warning:  
@@ -83,4 +83,4 @@ Unable to resolve asset "./assets/splash.png" from "splash.image" in your app.js
  this Should be toggle-able back to the todo section. The current behaviour is green highlighting.
  - [ ] Delete should be under the edit button
  - [ ] Edit button shouldn't say cancel when the edit menu is open, it should instead say Finish Editing
- - [ ] 
+ - [ ] Refactor overview to be called Heat Maps and the component HeatMapScreen

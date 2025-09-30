@@ -4,7 +4,7 @@ export interface SubGoal {
   id: string;
   title: string;
   frequency: Frequency;
-  completions: string[]; // ISO yyyy-MM-dd
+  completions: Date[]; // Array of completion dates
 }
 
 export interface Goal {

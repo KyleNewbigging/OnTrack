@@ -2,7 +2,15 @@ import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { Goal, Frequency } from "./types";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
+
+// Date utility functions
+const normalizeDate = (date: Date): Date => startOfDay(date);
+const dateToKey = (date: Date): string => format(normalizeDate(date), "yyyy-MM-dd");
+const isSameDay = (date1: Date, date2: Date): boolean => 
+  dateToKey(date1) === dateToKey(date2);
+
+
 // Debug function to inspect all stored data - console only for now
 export const debugAsyncStorage = async () => {
     try {
@@ -76,13 +84,13 @@ function getSampleGoals(): Goal[] {
                     title: "Morning workout",
                     frequency: "daily",
                     completions: [
-                        "2025-07-01", "2025-07-03", "2025-07-05", "2025-07-08", "2025-07-10",
-                        "2025-07-12", "2025-07-15", "2025-07-17", "2025-07-20", "2025-07-22",
-                        "2025-08-01", "2025-08-03", "2025-08-06", "2025-08-08", "2025-08-11",
-                        "2025-08-13", "2025-08-16", "2025-08-18", "2025-08-21", "2025-08-23",
-                        "2025-09-02", "2025-09-04", "2025-09-07", "2025-09-09", "2025-09-12",
-                        "2025-09-14", "2025-09-17", "2025-09-19", "2025-09-22", "2025-09-24",
-                        "2025-09-30"
+                        new Date(2025, 6, 1), new Date(2025, 6, 3), new Date(2025, 6, 5), new Date(2025, 6, 8), new Date(2025, 6, 10),
+                        new Date(2025, 6, 12), new Date(2025, 6, 15), new Date(2025, 6, 17), new Date(2025, 6, 20), new Date(2025, 6, 22),
+                        new Date(2025, 7, 1), new Date(2025, 7, 3), new Date(2025, 7, 6), new Date(2025, 7, 8), new Date(2025, 7, 11),
+                        new Date(2025, 7, 13), new Date(2025, 7, 16), new Date(2025, 7, 18), new Date(2025, 7, 21), new Date(2025, 7, 23),
+                        new Date(2025, 8, 2), new Date(2025, 8, 4), new Date(2025, 8, 7), new Date(2025, 8, 9), new Date(2025, 8, 12),
+                        new Date(2025, 8, 14), new Date(2025, 8, 17), new Date(2025, 8, 19), new Date(2025, 8, 22), new Date(2025, 8, 24),
+                        new Date(2025, 8, 30)
                     ]
                 },
                 {
@@ -90,10 +98,10 @@ function getSampleGoals(): Goal[] {
                     title: "Drink protein shake",
                     frequency: "daily",
                     completions: [
-                        "2025-07-02", "2025-07-04", "2025-07-06", "2025-07-09", "2025-07-11",
-                        "2025-08-02", "2025-08-05", "2025-08-07", "2025-08-10", "2025-08-12",
-                        "2025-08-15", "2025-08-17", "2025-08-20", "2025-08-22", "2025-08-25",
-                        "2025-09-03", "2025-09-05", "2025-09-08", "2025-09-10", "2025-09-13"
+                        new Date(2025, 6, 2), new Date(2025, 6, 4), new Date(2025, 6, 6), new Date(2025, 6, 9), new Date(2025, 6, 11),
+                        new Date(2025, 7, 2), new Date(2025, 7, 5), new Date(2025, 7, 7), new Date(2025, 7, 10), new Date(2025, 7, 12),
+                        new Date(2025, 7, 15), new Date(2025, 7, 17), new Date(2025, 7, 20), new Date(2025, 7, 22), new Date(2025, 7, 25),
+                        new Date(2025, 8, 3), new Date(2025, 8, 5), new Date(2025, 8, 8), new Date(2025, 8, 10), new Date(2025, 8, 13)
                     ]
                 }
             ]
@@ -109,22 +117,22 @@ function getSampleGoals(): Goal[] {
                     title: "Duolingo practice",
                     frequency: "daily",
                     completions: [
-                        "2025-07-15", "2025-07-16", "2025-07-17", "2025-07-18", "2025-07-19",
-                        "2025-07-20", "2025-07-21", "2025-07-22", "2025-07-23", "2025-07-24",
-                        "2025-07-25", "2025-07-26", "2025-07-27", "2025-07-28", "2025-07-29",
-                        "2025-07-30", "2025-07-31", "2025-08-01", "2025-08-02", "2025-08-03",
-                        "2025-08-04", "2025-08-05", "2025-08-06", "2025-08-07", "2025-08-08",
-                        "2025-08-09", "2025-08-10", "2025-08-11", "2025-08-12", "2025-08-13",
-                        "2025-08-14", "2025-08-15", "2025-08-16", "2025-08-17", "2025-08-18",
-                        "2025-08-19", "2025-08-20", "2025-08-21", "2025-08-22", "2025-08-23",
-                        "2025-08-24", "2025-08-25", "2025-08-26", "2025-08-27", "2025-08-28",
-                        "2025-08-29", "2025-08-30", "2025-08-31", "2025-09-01", "2025-09-02",
-                        "2025-09-03", "2025-09-04", "2025-09-05", "2025-09-06", "2025-09-07",
-                        "2025-09-08", "2025-09-09", "2025-09-10", "2025-09-11", "2025-09-12",
-                        "2025-09-13", "2025-09-14", "2025-09-15", "2025-09-16", "2025-09-17",
-                        "2025-09-18", "2025-09-19", "2025-09-20", "2025-09-21", "2025-09-22",
-                        "2025-09-23", "2025-09-24", "2025-09-25", "2025-09-26", "2025-09-27",
-                        "2025-09-28", "2025-09-29", "2025-09-30"
+                        new Date(2025, 6, 15), new Date(2025, 6, 16), new Date(2025, 6, 17), new Date(2025, 6, 18), new Date(2025, 6, 19),
+                        new Date(2025, 6, 20), new Date(2025, 6, 21), new Date(2025, 6, 22), new Date(2025, 6, 23), new Date(2025, 6, 24),
+                        new Date(2025, 6, 25), new Date(2025, 6, 26), new Date(2025, 6, 27), new Date(2025, 6, 28), new Date(2025, 6, 29),
+                        new Date(2025, 6, 30), new Date(2025, 6, 31), new Date(2025, 7, 1), new Date(2025, 7, 2), new Date(2025, 7, 3),
+                        new Date(2025, 7, 4), new Date(2025, 7, 5), new Date(2025, 7, 6), new Date(2025, 7, 7), new Date(2025, 7, 8),
+                        new Date(2025, 7, 9), new Date(2025, 7, 10), new Date(2025, 7, 11), new Date(2025, 7, 12), new Date(2025, 7, 13),
+                        new Date(2025, 7, 14), new Date(2025, 7, 15), new Date(2025, 7, 16), new Date(2025, 7, 17), new Date(2025, 7, 18),
+                        new Date(2025, 7, 19), new Date(2025, 7, 20), new Date(2025, 7, 21), new Date(2025, 7, 22), new Date(2025, 7, 23),
+                        new Date(2025, 7, 24), new Date(2025, 7, 25), new Date(2025, 7, 26), new Date(2025, 7, 27), new Date(2025, 7, 28),
+                        new Date(2025, 7, 29), new Date(2025, 7, 30), new Date(2025, 7, 31), new Date(2025, 8, 1), new Date(2025, 8, 2),
+                        new Date(2025, 8, 3), new Date(2025, 8, 4), new Date(2025, 8, 5), new Date(2025, 8, 6), new Date(2025, 8, 7),
+                        new Date(2025, 8, 8), new Date(2025, 8, 9), new Date(2025, 8, 10), new Date(2025, 8, 11), new Date(2025, 8, 12),
+                        new Date(2025, 8, 13), new Date(2025, 8, 14), new Date(2025, 8, 15), new Date(2025, 8, 16), new Date(2025, 8, 17),
+                        new Date(2025, 8, 18), new Date(2025, 8, 19), new Date(2025, 8, 20), new Date(2025, 8, 21), new Date(2025, 8, 22),
+                        new Date(2025, 8, 23), new Date(2025, 8, 24), new Date(2025, 8, 25), new Date(2025, 8, 26), new Date(2025, 8, 27),
+                        new Date(2025, 8, 28), new Date(2025, 8, 29), new Date(2025, 8, 30)
                     ]
                 },
                 {
@@ -132,9 +140,9 @@ function getSampleGoals(): Goal[] {
                     title: "Watch Spanish Netflix",
                     frequency: "weekly",
                     completions: [
-                        "2025-07-20", "2025-07-27", "2025-08-03", "2025-08-10", "2025-08-17", 
-                        "2025-08-24", "2025-08-31", "2025-09-07", "2025-09-14", "2025-09-21", 
-                        "2025-09-28"
+                        new Date("2025-07-20"), new Date("2025-07-27"), new Date("2025-08-03"), new Date("2025-08-10"), new Date("2025-08-17"), 
+                        new Date("2025-08-24"), new Date("2025-08-31"), new Date("2025-09-07"), new Date("2025-09-14"), new Date("2025-09-21"), 
+                        new Date("2025-09-28")
                     ]
                 }
             ]
@@ -150,7 +158,7 @@ function getSampleGoals(): Goal[] {
                     title: "Drink 8 glasses of water",
                     frequency: "daily",
                     completions: [
-                        "2025-08-02", "2025-08-15", "2025-09-01", "2025-09-20"
+                        new Date("2025-08-02"), new Date("2025-08-15"), new Date("2025-09-01"), new Date("2025-09-20")
                     ]
                 },
                 {
@@ -158,7 +166,7 @@ function getSampleGoals(): Goal[] {
                     title: "Meditate for 10 minutes",
                     frequency: "daily",
                     completions: [
-                        "2025-08-10", "2025-09-05"
+                        new Date("2025-08-10"), new Date("2025-09-05")
                     ]
                 },
                 {
@@ -166,7 +174,7 @@ function getSampleGoals(): Goal[] {
                     title: "Take vitamins",
                     frequency: "daily",
                     completions: [
-                        "2025-08-05", "2025-08-20", "2025-09-03"
+                        new Date("2025-08-05"), new Date("2025-08-20"), new Date("2025-09-03")
                     ]
                 }
             ]
@@ -182,10 +190,10 @@ function getSampleGoals(): Goal[] {
                     title: "Code for 2 hours",
                     frequency: "daily",
                     completions: [
-                        "2025-08-15", "2025-08-16", "2025-08-18", "2025-08-19", "2025-08-21",
-                        "2025-08-22", "2025-08-24", "2025-08-25", "2025-08-27", "2025-08-28",
-                        "2025-09-02", "2025-09-03", "2025-09-05", "2025-09-06", "2025-09-09",
-                        "2025-09-10", "2025-09-12", "2025-09-13", "2025-09-16", "2025-09-17"
+                        new Date("2025-08-15"), new Date("2025-08-16"), new Date("2025-08-18"), new Date("2025-08-19"), new Date("2025-08-21"),
+                        new Date("2025-08-22"), new Date("2025-08-24"), new Date("2025-08-25"), new Date("2025-08-27"), new Date("2025-08-28"),
+                        new Date("2025-09-02"), new Date("2025-09-03"), new Date("2025-09-05"), new Date("2025-09-06"), new Date("2025-09-09"),
+                        new Date("2025-09-10"), new Date("2025-09-12"), new Date("2025-09-13"), new Date("2025-09-16"), new Date("2025-09-17")
                     ]
                 },
                 {
@@ -193,7 +201,7 @@ function getSampleGoals(): Goal[] {
                     title: "Write documentation",
                     frequency: "weekly",
                     completions: [
-                        "2025-08-18", "2025-08-25", "2025-09-01", "2025-09-08", "2025-09-15", "2025-09-22"
+                        new Date("2025-08-18"), new Date("2025-08-25"), new Date("2025-09-01"), new Date("2025-09-08"), new Date("2025-09-15"), new Date("2025-09-22")
                     ]
                 },
                 {
@@ -201,7 +209,7 @@ function getSampleGoals(): Goal[] {
                     title: "Test on device",
                     frequency: "weekly",
                     completions: [
-                        "2025-08-20", "2025-08-27", "2025-09-03", "2025-09-10", "2025-09-17"
+                        new Date("2025-08-20"), new Date("2025-08-27"), new Date("2025-09-03"), new Date("2025-09-10"), new Date("2025-09-17")
                     ]
                 }
             ]
@@ -268,7 +276,7 @@ export const useStore = create<State>()(
                 })),
             toggleTaskCompletion: (goalId, subId, date = new Date()) =>
                 set((s) => {
-                    const d = format(date, "yyyy-MM-dd");
+                    const normalizedDate = normalizeDate(date);
                     return {
                         goals: s.goals.map((g) => {
                             if (g.id !== goalId) return g;
@@ -276,12 +284,14 @@ export const useStore = create<State>()(
                                 ...g,
                                 subGoals: g.subGoals.map((t) => {
                                     if (t.id !== subId) return t;
-                                    const has = t.completions.includes(d);
+                                    const hasCompletion = t.completions.some(completionDate => 
+                                        isSameDay(completionDate, normalizedDate)
+                                    );
                                     return {
                                         ...t,
-                                        completions: has
-                                            ? t.completions.filter((x) => x !== d)
-                                            : [...t.completions, d],
+                                        completions: hasCompletion
+                                            ? t.completions.filter((x) => !isSameDay(x, normalizedDate))
+                                            : [...t.completions, normalizedDate],
                                     };
                                 }),
                             };
@@ -292,8 +302,9 @@ export const useStore = create<State>()(
                 const map: Record<string, number> = {};
                 for (const g of get().goals) {
                     for (const t of g.subGoals) {
-                        for (const d of t.completions) {
-                            map[d] = (map[d] || 0) + 1;
+                        for (const completionDate of t.completions) {
+                            const dateKey = dateToKey(completionDate);
+                            map[dateKey] = (map[dateKey] || 0) + 1;
                         }
                     }
                 }
@@ -308,6 +319,22 @@ export const useStore = create<State>()(
         {
             name: ACTIVE_STORAGE_KEY, // Dynamic storage key based on CURRENT_MODE
             storage: createJSONStorage(() => AsyncStorage),
+            // Custom onRehydrateStorage to convert ISO strings back to Date objects
+            onRehydrateStorage: () => {
+                return (state) => {
+                    if (state?.goals) {
+                        state.goals = state.goals.map(goal => ({
+                            ...goal,
+                            subGoals: goal.subGoals?.map(subGoal => ({
+                                ...subGoal,
+                                completions: subGoal.completions?.map(completion => 
+                                    typeof completion === 'string' ? new Date(completion) : completion
+                                ) || []
+                            })) || []
+                        }));
+                    }
+                };
+            },
         }
     )
 );

@@ -3,6 +3,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, Text, View, FlatList } from "react-native";
 import { useStore } from "../store";
 import Heatmap from "./Heatmap";
+import { format } from "date-fns";
 
 type RootStackParamList = {
   Home: undefined;
@@ -20,10 +21,11 @@ export default function OverviewScreen({ navigation, route }: OverviewProps) {
   if (!goal) return <Text>Goal not found</Text>;
 
   // Transform task completions into heatmap format for each task
-  const getTaskHeatmapData = (taskCompletions: string[]) => {
+  const getTaskHeatmapData = (taskCompletions: Date[]) => {
     const heatmapData: Record<string, number> = {};
     taskCompletions.forEach(date => {
-      heatmapData[date] = 1; // 1 indicates completion
+      const dateKey = format(date, "yyyy-MM-dd");
+      heatmapData[dateKey] = 1; // 1 indicates completion
     });
     return heatmapData;
   };
