@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { View, ScrollView, Text } from "react-native";
-import Svg, { Rect } from "react-native-svg";
+import Svg, { Rect, Circle } from "react-native-svg";
 import { addDays, format, subDays, startOfMonth, isSameMonth } from "date-fns";
 
 interface HMProps {
@@ -93,7 +93,30 @@ export default function Heatmap({ startOffsetDays = 120, values }: HMProps) {
               const x = gap + col * (cell + gap);
               const y = gap + row * (cell + gap);
               const n = values[d] || 0;
-              return <Rect key={d} x={x} y={y} width={cell} height={cell} rx={3} fill={scale(n)} />;
+              const isToday = d === format(today, "yyyy-MM-dd");
+              
+              return (
+                <React.Fragment key={d}>
+                  <Rect 
+                    x={x} 
+                    y={y} 
+                    width={cell} 
+                    height={cell} 
+                    rx={3} 
+                    fill={scale(n)}
+                    stroke={isToday ? "#2563eb" : "transparent"}
+                    strokeWidth={isToday ? 2 : 0}
+                  />
+                  {isToday && (
+                    <Circle
+                      cx={x + cell/2}
+                      cy={y + cell/2}
+                      r={2}
+                      fill="#2563eb"
+                    />
+                  )}
+                </React.Fragment>
+              );
             })}
           </Svg>
         </View>
