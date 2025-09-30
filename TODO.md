@@ -14,6 +14,7 @@ Use ✅ when done, keep lines short and actionable.
 - [x] Persist state with AsyncStorage
 - [x] Input labels for clarity
 - [x] Handle empty states (no goals, no sub-goals)
+- [ ] Delete sub-goal/task
 - [ ] Consistency heatmap (aggregate completions per day)
 
 ---
@@ -22,8 +23,9 @@ Use ✅ when done, keep lines short and actionable.
 - [ ] Undo option after deleting a goal (snackbar or banner)
 - [ ] Reset data (dev-only) to clear storage and reseed demo
 - [ ] Demo seed goals only if storage is empty
-- [ ] Slight polish: spacing, typography
-
+- [ ] Radar Chart - For Summarized consistency
+- [ ] Frequency - Custom (# of occurences a week)
+- [ ] Tasks UI for Custom Frequency (Show progress on task details)
 ---
 
 ## Notifications (Later)

@@ -1,4 +1,4 @@
-export type Frequency = "once" | "daily" | "weekly";
+export type Frequency = "once" | "daily" | "weekly"; // TODO: custom option
 
 export interface SubGoal {
   id: string;
