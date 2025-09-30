@@ -1,6 +1,7 @@
 import React from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { SafeAreaView, Text, View, Pressable, ScrollView, Alert } from "react-native";
+import { Text, View, Pressable, ScrollView, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useStore, debugAsyncStorage, getCurrentMode } from "../store";
 import RadarChart from "./RadarChart";
 

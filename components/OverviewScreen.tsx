@@ -1,6 +1,7 @@
 import React from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { SafeAreaView, Text, View, FlatList } from "react-native";
+import { Text, View, FlatList } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useStore } from "../store";
 import Heatmap from "./Heatmap";
 import { format } from "date-fns";

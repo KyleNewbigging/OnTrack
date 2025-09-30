@@ -1,6 +1,7 @@
 import React from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { SafeAreaView, Text, View, Pressable, TextInput, FlatList, Alert } from "react-native";
+import { Text, View, Pressable, TextInput, FlatList, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useStore } from "../store";
 import { format } from "date-fns";
 
@@ -130,8 +131,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
           keyExtractor={(t) => t.id}
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
           renderItem={({ item }) => {
-            const today = format(new Date(), "yyyy-MM-dd");
-            const isDone = item.completions.includes(today);
+            const today = new Date();
+            const isDone = item.completions.some(date => 
+              format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
+            );
             return (
               <Pressable
                 onPress={() => toggleTask(goalId, item.id)}
