@@ -31,19 +31,43 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
   const centerX = size / 2;
   const centerY = size / 2;
   const radius = (size / 2) - 40; // Leave margin for labels
-  const today = format(new Date(), "yyyy-MM-dd");
-
-  // Calculate completion percentage for each goal today
+  
+  // Calculate historical completion percentage for each goal
   const goalData = goals.map((goal) => {
     if (goal.subGoals.length === 0) {
       return { title: goal.title, percentage: 0 };
     }
     
-    const completedToday = goal.subGoals.filter(subGoal => 
-      subGoal.completions.includes(today)
-    ).length;
+    // Calculate average completion rate across all tasks in this goal
+    let totalCompletionRate = 0;
     
-    const percentage = completedToday / goal.subGoals.length;
+    goal.subGoals.forEach((subGoal) => {
+      if (subGoal.completions.length === 0) {
+        // No completions yet, 0% rate
+        totalCompletionRate += 0;
+      } else {
+        // Calculate how many days this goal has existed
+        const goalCreatedDate = new Date(goal.createdAt);
+        const today = new Date();
+        const daysSinceCreation = Math.max(1, Math.ceil((today.getTime() - goalCreatedDate.getTime()) / (1000 * 60 * 60 * 24)));
+        
+        // Calculate completion rate based on frequency
+        let expectedCompletions;
+        if (subGoal.frequency === 'daily') {
+          expectedCompletions = daysSinceCreation;
+        } else if (subGoal.frequency === 'weekly') {
+          expectedCompletions = Math.ceil(daysSinceCreation / 7);
+        } else { // 'once'
+          expectedCompletions = 1;
+        }
+        
+        // Calculate actual completion rate (cap at 100%)
+        const completionRate = Math.min(1.0, subGoal.completions.length / expectedCompletions);
+        totalCompletionRate += completionRate;
+      }
+    });
+    
+    const percentage = totalCompletionRate / goal.subGoals.length;
     return { title: goal.title, percentage };
   });
 
@@ -95,7 +119,7 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
       alignItems: "center"
     }}>
       <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 12 }}>
-        Today's Goal Progress
+        Goal Consistency Overview
       </Text>
       
       <Svg width={size} height={size}>

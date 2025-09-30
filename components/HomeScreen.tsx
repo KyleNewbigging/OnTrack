@@ -27,7 +27,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
             <Text style={{ color: "white", fontWeight: "600", textAlign: "center" }}>+ New Goal</Text>
           </Pressable>
 
-          <Text style={{ fontSize: 18, fontWeight: "700" }}>Today's Progress</Text>
+          <Text style={{ fontSize: 18, fontWeight: "700" }}>Consistency Overview</Text>
           <RadarChart goals={goals} size={250} />
 
           <Text style={{ fontSize: 18, fontWeight: "700", marginTop: 8 }}>Goals</Text>
