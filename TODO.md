@@ -66,3 +66,6 @@ Use ✅ when done, keep lines short and actionable.
 - [ ] Sync via Supabase for shared accounts
 - [ ] iOS widgets (streak counter / next action)
 - [ ] Analytics: track most vs least completed goals
+
+## Enhancements
+- [ ] save dates as strict Date type rather than ISO string
