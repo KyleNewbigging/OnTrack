@@ -21,6 +21,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
 
   const [subTitle, setSubTitle] = React.useState("");
   const [frequency, setFrequency] = React.useState<"once" | "daily" | "weekly">("daily");
+  const [isEditing, setIsEditing] = React.useState(false);
 
   if (!goal) return <Text>Not found</Text>;
 
@@ -29,35 +30,49 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
       <View style={{ padding: 16, gap: 12 }}>
         <Text style={{ fontSize: 22, fontWeight: "800" }}>{goal.title}</Text>
         {goal.target && <Text style={{ color: "#374151" }}>Target: {goal.target}</Text>}
-        <Pressable
-          onPress={() => {
-            Alert.alert(
-              "Delete goal?",
-              `This will remove "${goal.title}" and all its sub-goals.`,
-              [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Delete", style: "destructive", onPress: () => {
-                    deleteGoal(goal.id);
-                    // after delete, pop back to Home
-                    navigation.goBack();
-                  }
-                },
-              ]
-            );
-          }}
-          style={{
-            alignSelf: "flex-start",
-            backgroundColor: "#ef4444",
-            paddingVertical: 8,
-            paddingHorizontal: 14,
-            borderRadius: 9999, // pill
-          }}
-        >
-          <Text style={{ color: "white", fontWeight: "700" }}>Delete</Text>
-        </Pressable>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Pressable
+            onPress={() => setIsEditing(!isEditing)}
+            style={{
+              backgroundColor: "#111827",
+              paddingVertical: 8,
+              paddingHorizontal: 14,
+              borderRadius: 9999, // pill
+            }}
+          >
+            <Text style={{ color: "white", fontWeight: "700" }}>{isEditing ? "Cancel" : "Edit"}</Text>
+          </Pressable>
+          
+          <Pressable
+            onPress={() => {
+              Alert.alert(
+                "Delete goal?",
+                `This will remove "${goal.title}" and all its sub-goals.`,
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Delete", style: "destructive", onPress: () => {
+                      deleteGoal(goal.id);
+                      // after delete, pop back to Home
+                      navigation.goBack();
+                    }
+                  },
+                ]
+              );
+            }}
+            style={{
+              backgroundColor: "#ef4444",
+              paddingVertical: 8,
+              paddingHorizontal: 14,
+              borderRadius: 9999, // pill
+            }}
+          >
+            <Text style={{ color: "white", fontWeight: "700" }}>Delete</Text>
+          </Pressable>
+        </View>
 
-        <View style={{ borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, padding: 12, gap: 8 }}>
+        {isEditing && (
+          <View style={{ borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, padding: 12, gap: 8 }}>
           <Text style={{ fontWeight: "700" }}>Add sub-goal / task</Text>
           <TextInput
             placeholder="e.g., Take creatine"
@@ -94,6 +109,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>Add</Text>
           </Pressable>
         </View>
+        )}
 
         <Text style={{ fontWeight: "700", marginTop: 4 }}>Tasks</Text>
         <FlatList

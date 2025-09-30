@@ -58,6 +58,7 @@ Use ✅ when done, keep lines short and actionable.
 - [ ] Extract inline styles to StyleSheet or small helper functions
 - [ ] Validate inputs (no empty titles, prevent duplicates)
 - [ ] Add error boundaries / try-catch around storage writes
+- [ ] We need to add some sort of code formatter (lint or prettier)
 
 ---
 
