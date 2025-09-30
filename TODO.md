@@ -72,10 +72,7 @@ Use ✅ when done, keep lines short and actionable.
 - [ ] at some point maybe we should add a limit of 365 for radar chart data points per goal
 - [ ] would be cool for the radar chart fill to be a gradient with respect to the vertex colours
 - [x] Fix warning: SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. ✅
-and 
-```
-Unable to resolve asset "./assets/splash.png" from "splash.image" in your app.json or app.config.js
-```
+- [x] Unable to resolve asset "./assets/splash.png" from "splash.image" in your app.json or app.config.js ✅
  - [ ] when a task is clicked on a day we should should moved down to a completed section of the page. Perhaps greyed out.
  this Should be toggle-able back to the todo section. The current behaviour is green highlighting.
  - [ ] Delete should be under the edit button
