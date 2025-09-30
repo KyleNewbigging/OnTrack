@@ -69,3 +69,5 @@ Use ✅ when done, keep lines short and actionable.
 
 ## Enhancements
 - [ ] save dates as strict Date type rather than ISO string
+- [ ] at some point maybe we should add a limit of 365 for radar chart data points per goal
+- [ ] would be cool for the radar chart fill to be a gradient with respect to the vertex colours

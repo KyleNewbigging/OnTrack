@@ -30,7 +30,19 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
 
   const centerX = size / 2;
   const centerY = size / 2;
-  const radius = (size / 2) - 40; // Leave margin for labels
+  const radius = (size / 2) - 20; // Reduced margin since no labels
+  
+  // Color palette for different goals
+  const colors = [
+    "#3b82f6", // Blue
+    "#10b981", // Green  
+    "#f59e0b", // Orange
+    "#ef4444", // Red
+    "#8b5cf6", // Purple
+    "#06b6d4", // Cyan
+    "#84cc16", // Lime
+    "#f97316"  // Orange-red
+  ];
   
   // Calculate historical completion percentage for each goal
   const goalData = goals.map((goal) => {
@@ -82,8 +94,9 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
     return { x, y, angle, distance, ...data };
   });
 
-  // Generate grid circles (25%, 50%, 75%, 100%)
+  // Generate grid circles (50%, 100%)
   const gridLevels = [0.25, 0.5, 0.75, 1.0];
+  const labeledLevels = [0.5, 1.0]; // Only show labels for 50% and 100%
 
   // Generate axis lines and labels
   const axisPoints = goalData.map((data, index) => {
@@ -165,35 +178,17 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
             key={`point-${index}`}
             cx={point.x}
             cy={point.y}
-            r={4}
-            fill="#3b82f6"
+            r={5}
+            fill={colors[index % colors.length]}
+            stroke="white"
+            strokeWidth={2}
           />
         ))}
 
-        {/* Goal labels */}
-        {axisPoints.map((axis, index) => {
-          // Truncate long goal names
-          const displayTitle = axis.title.length > 8 
-            ? axis.title.substring(0, 8) + '...' 
-            : axis.title;
-          
-          return (
-            <SvgText
-              key={`label-${index}`}
-              x={axis.labelX}
-              y={axis.labelY}
-              fontSize="12"
-              fill="#374151"
-              textAnchor="middle"
-              alignmentBaseline="central"
-            >
-              {displayTitle}
-            </SvgText>
-          );
-        })}
 
-        {/* Percentage labels on grid */}
-        {gridLevels.map((level, index) => (
+
+        {/* Percentage labels on grid - only 50% and 100% */}
+        {labeledLevels.map((level, index) => (
           <SvgText
             key={`grid-label-${index}`}
             x={centerX + 5}
@@ -217,10 +212,12 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
             marginVertical: 2 
           }}>
             <View style={{
-              width: 8,
-              height: 8,
-              backgroundColor: "#3b82f6",
-              borderRadius: 4,
+              width: 10,
+              height: 10,
+              backgroundColor: colors[index % colors.length],
+              borderRadius: 5,
+              borderWidth: 1,
+              borderColor: "white",
               marginRight: 4
             }} />
             <Text style={{ fontSize: 10, color: "#6b7280" }}>
