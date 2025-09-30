@@ -21,28 +21,7 @@ interface State {
 export const useStore = create<State>()(
     persist(
         (set, get) => ({
-            goals: [
-                {
-                    id: makeId(),
-                    title: "Demo Goal",
-                    target: "200 lbs",
-                    createdAt: Date.now(),
-                    subGoals: [
-                        {
-                            id: makeId(),
-                            title: "Take creatine",
-                            frequency: "daily",
-                            completions: ["2025-09-25", "2025-09-26", "2025-09-27"]
-                        },
-                        {
-                            id: makeId(),
-                            title: "Workout",
-                            frequency: "weekly",
-                            completions: ["2025-09-24", "2025-09-27"]
-                        }
-                    ]
-                }
-            ],
+            goals: [],
 
             addGoal: (title, target) =>
                 set((s) => ({
