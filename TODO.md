@@ -71,3 +71,11 @@ Use ✅ when done, keep lines short and actionable.
 - [ ] save dates as strict Date type rather than ISO string
 - [ ] at some point maybe we should add a limit of 365 for radar chart data points per goal
 - [ ] would be cool for the radar chart fill to be a gradient with respect to the vertex colours
+- [ ] Fix warning:  
+```
+SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/th3rdwave/react-native-safe-area-context
+```
+and 
+```
+Unable to resolve asset "./assets/splash.png" from "splash.image" in your app.json or app.config.js
+```
