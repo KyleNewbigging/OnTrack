@@ -89,6 +89,25 @@ OnTrack/
 - **AsyncStorage**: Local data persistence
 - **date-fns**: Date manipulation and formatting
 
+### Development vs Production Data
+
+OnTrack includes a simple toggle system for switching between sample data and clean data during development:
+
+**To switch modes**, edit line ~222 in `store.ts`:
+```typescript
+// For development with rich sample data (4 goals, 90+ days of history)
+const CURRENT_MODE = 'DEV' as 'DEV' | 'PROD';
+
+// For production with clean empty state  
+const CURRENT_MODE = 'PROD' as 'DEV' | 'PROD';
+```
+
+**Why this is useful:**
+- **DEV mode**: Test features with realistic data (heatmaps, radar charts, goal lists)
+- **PROD mode**: Test empty state flows (onboarding, first goal creation)
+- **Quick switching**: Just change one line and save - app auto-reloads
+- **Visual indicator**: Small badge shows current mode in top-right corner
+
 ### State Management
 
 The app uses **Zustand** for state management with persistence:
