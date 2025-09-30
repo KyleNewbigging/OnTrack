@@ -2,8 +2,6 @@
 
 A beautiful habit tracking mobile application built with React Native and Expo. OnTrack helps users build and maintain consistent habits through visual progress tracking with interactive heatmaps.
 
-![OnTrack](./assets/icon.png)
-
 ## ✨ Features
 
 ### 📊 **Visual Progress Tracking**
