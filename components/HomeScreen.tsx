@@ -2,7 +2,7 @@ import React from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, Text, View, Pressable, FlatList } from "react-native";
 import { useStore } from "../store";
-import Heatmap from "./Heatmap";
+import RadarChart from "./RadarChart";
 
 type RootStackParamList = {
   Home: undefined;
@@ -15,7 +15,6 @@ type HomeProps = NativeStackScreenProps<RootStackParamList, "Home">;
 
 export default function HomeScreen({ navigation }: HomeProps) {
   const goals = useStore((s) => s.goals);
-  const completionsByDate = useStore((s) => s.completionsByDate);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -27,8 +26,8 @@ export default function HomeScreen({ navigation }: HomeProps) {
           <Text style={{ color: "white", fontWeight: "600", textAlign: "center" }}>+ New Goal</Text>
         </Pressable>
 
-        <Text style={{ fontSize: 18, fontWeight: "700" }}>Consistency</Text>
-        <Heatmap startOffsetDays={180} values={completionsByDate()} />
+        <Text style={{ fontSize: 18, fontWeight: "700" }}>Today's Progress</Text>
+        <RadarChart goals={goals} size={250} />
 
         <Text style={{ fontSize: 18, fontWeight: "700", marginTop: 8 }}>Goals</Text>
         <FlatList
