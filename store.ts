@@ -4,8 +4,19 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { Goal, Frequency } from "./types";
 import { format, startOfDay } from "date-fns";
 
-// Date utility functions
-const normalizeDate = (date: Date): Date => startOfDay(date);
+
+// Delete one store
+export async function deleteStoreByKey(key: string) {
+  try {
+    await AsyncStorage.removeItem(key);
+    console.log(`✅ Deleted persisted store: ${key}`);
+  } catch (err) {
+    console.error(`❌ Failed to delete ${key}:`, err);
+  }
+  
+}
+  // Date utility functions
+  const normalizeDate = (date: Date): Date => startOfDay(date);
 const dateToKey = (date: Date): string => format(normalizeDate(date), "yyyy-MM-dd");
 const isSameDay = (date1: Date, date2: Date): boolean => 
   dateToKey(date1) === dateToKey(date2);
@@ -13,6 +24,11 @@ const isSameDay = (date1: Date, date2: Date): boolean =>
 
 // Debug function to inspect all stored data - console only for now
 export const debugAsyncStorage = async () => {
+    /* console.log("DEBUG PRESSED");
+    await deleteStoreByKey("ontrack-store"); // Change id for specific store
+    console.log(" DELETED store"); */
+
+
     try {
         const timestamp = new Date().toISOString();
         
