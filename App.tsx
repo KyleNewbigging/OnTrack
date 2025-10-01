@@ -43,7 +43,14 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer theme={navigationTheme}>
-        <Stack.Navigator>
+        <Stack.Navigator
+          screenOptions={{
+            headerStyle: { backgroundColor: colors.background },
+            headerTintColor: colors.text,
+            headerTitleStyle: { color: colors.text },
+            contentStyle: { backgroundColor: colors.background },
+          }}
+        >
           <Stack.Screen name="Home" component={HomeScreen} options={{ title: "OnTrack" }} />
           <Stack.Screen name="Goal" component={GoalScreen} options={{ title: "Goal" }} />
           <Stack.Screen name="NewGoal" component={NewGoalScreen} options={{ title: "New Goal" }} />

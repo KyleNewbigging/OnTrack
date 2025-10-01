@@ -259,6 +259,7 @@ interface State {
     deleteSubGoal: (goalId: string, subId: string) => void;
     deleteGoal: (goalId: string) => void;
     toggleTheme: () => void;
+    clearStore: () => void;
 }
 
 // Get initial goals based on store mode
@@ -350,6 +351,11 @@ export const useStore = create<State>()(
             toggleTheme: () => {
                 set((s) => ({
                     theme: s.theme === 'dark' ? 'light' : 'dark',
+                }));
+            },
+            clearStore: () => {
+                set((s) => ({
+                    goals: [],
                 }));
             },
         }),

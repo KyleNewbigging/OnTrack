@@ -1,4 +1,5 @@
 {
     "codex.approvalMode": "fullAccess",
     "chat.tools.global.autoApprove": true,
+    "chatgpt.openOnStartup": true,
 }
