@@ -80,6 +80,6 @@ Use ✅ when done, keep lines short and actionable.
  - [x] when a task is clicked on a day we should should moved down to a completed section of the page. Perhaps greyed out. this Should be toggle-able back to the todo section. The current behaviour is green highlighting. ✅
  - [x] Delete should be under the edit button ✅
  - [x] Edit button shouldn't say cancel when the edit menu is open, it should instead say Finish Editing ✅
- - [ ] Refactor overview to be called Heat Maps and the component HeatMapScreen
+ - [x] Refactor overview to be called Heat Maps and the component HeatMapScreen
  - [x] there is a weird element that covers a little bit of the top HomePage ✅
  - [ ] when we delete tasks, and no longer need to do them. we should have some sort of archiving so that we can look back at them, but they shouln't continue to show up
