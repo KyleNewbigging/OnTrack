@@ -19,7 +19,7 @@ export default function NewGoalScreen({ navigation }: NewGoalProps) {
   const [target, setTarget] = React.useState("");
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
       <View style={{ padding: 16, gap: 12 }}>
         {/* Label + Input for Goal Title */}
         <Text style={{ fontWeight: "700", fontSize: 16 }}>Goal Title</Text>

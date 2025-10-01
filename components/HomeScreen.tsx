@@ -19,7 +19,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
   const currentMode = getCurrentMode();
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
         <View style={{ padding: 16, gap: 12 }}>
           

@@ -28,7 +28,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   if (!goal) return <Text>Not found</Text>;
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
       <View style={{ padding: 16, gap: 12 }}>
         <Text style={{ fontSize: 22, fontWeight: "800" }}>{goal.title}</Text>
         {goal.target && <Text style={{ color: "#374151" }}>Target: {goal.target}</Text>}

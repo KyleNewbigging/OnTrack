@@ -32,7 +32,7 @@ export default function OverviewScreen({ navigation, route }: OverviewProps) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
       <View style={{ padding: 16, gap: 16 }}>
         <View>
           <Text style={{ fontSize: 22, fontWeight: "800" }}>{goal.title} - Overview</Text>

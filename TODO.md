@@ -77,4 +77,4 @@ Use ✅ when done, keep lines short and actionable.
  - [ ] Delete should be under the edit button
  - [ ] Edit button shouldn't say cancel when the edit menu is open, it should instead say Finish Editing
  - [ ] Refactor overview to be called Heat Maps and the component HeatMapScreen
- - [ ] there is a weird element that covers a little bit of the top HomePage
+ - [x] there is a weird element that covers a little bit of the top HomePage ✅
