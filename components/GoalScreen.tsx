@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useStore } from "../store";
 import { format } from "date-fns";
+import { useThemeColors, type ThemeColors } from "../theme";
 
 type RootStackParamList = {
   Home: undefined;
@@ -15,229 +16,338 @@ type RootStackParamList = {
 
 type GoalProps = NativeStackScreenProps<RootStackParamList, "Goal">;
 
+type TaskCardProps = {
+  item: {
+    id: string;
+    title: string;
+    frequency: "once" | "daily" | "weekly";
+  };
+  completed: boolean;
+  onToggle: () => void;
+  onDelete: () => void;
+  colors: ThemeColors;
+};
+
+const TaskCard = ({ item, completed, onToggle, onDelete, colors }: TaskCardProps) => (
+  <Pressable
+    onPress={onToggle}
+    onLongPress={onDelete}
+    delayLongPress={300}
+    style={{
+      padding: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: completed ? colors.surfaceMuted : colors.surface,
+      opacity: completed ? 0.85 : 1,
+      gap: 4,
+    }}
+  >
+    <Text
+      style={{
+        fontWeight: "700",
+        color: completed ? colors.textMuted : colors.text,
+        textDecorationLine: completed ? "line-through" : "none",
+      }}
+    >
+      {item.title}
+    </Text>
+    <Text style={{ color: colors.textMuted }}>
+      Frequency: {item.frequency}
+    </Text>
+    <Text style={{ color: completed ? colors.success : colors.textMuted }}>
+      Done today: {completed ? "Yes" : "No"}
+    </Text>
+  </Pressable>
+);
+
 export default function GoalScreen({ navigation, route }: GoalProps) {
   const { goalId } = route.params;
   const goal = useStore((s) => s.goals.find((g) => g.id === goalId)!);
   const addSubGoal = useStore((s) => s.addSubGoal);
   const toggleTask = useStore((s) => s.toggleTaskCompletion);
+  const deleteSubGoal = useStore((s) => s.deleteSubGoal);
   const deleteGoal = useStore((s) => s.deleteGoal);
+  const colors = useThemeColors();
 
   const [subTitle, setSubTitle] = React.useState("");
   const [frequency, setFrequency] = React.useState<"once" | "daily" | "weekly">("daily");
   const [isEditing, setIsEditing] = React.useState(false);
 
-  if (!goal) return <Text>Not found</Text>;
+  const longPressTriggeredRef = React.useRef(false);
+
+  const todayKey = format(new Date(), "yyyy-MM-dd");
+  const pendingTasks = goal?.subGoals.filter(
+    (item) => !item.completions.some((date) => format(date, "yyyy-MM-dd") === todayKey)
+  ) ?? [];
+  const completedToday = goal?.subGoals.filter((item) =>
+    item.completions.some((date) => format(date, "yyyy-MM-dd") === todayKey)
+  ) ?? [];
+
+  const handleSubGoalPress = React.useCallback(
+    async (subId: string) => {
+      if (longPressTriggeredRef.current) {
+        longPressTriggeredRef.current = false;
+        return;
+      }
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      toggleTask(goalId, subId);
+    },
+    [goalId, toggleTask]
+  );
+
+  const handleSubGoalLongPress = React.useCallback(
+    (subId: string, title: string) => {
+      longPressTriggeredRef.current = true;
+      void Haptics.selectionAsync();
+      Alert.alert(
+        "Delete task?",
+        `This will remove "${title}" from your goal.`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {
+              longPressTriggeredRef.current = false;
+            },
+          },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              longPressTriggeredRef.current = false;
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              deleteSubGoal(goalId, subId);
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+    },
+    [deleteSubGoal, goalId]
+  );
+
+  if (!goal) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}
+        edges={['bottom', 'left', 'right']}
+      >
+        <Text style={{ color: colors.text }}>Not found</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
-      <View style={{ padding: 16, gap: 12 }}>
-        <Text style={{ fontSize: 22, fontWeight: "800" }}>{goal.title}</Text>
-        {goal.target && <Text style={{ color: "#374151" }}>Target: {goal.target}</Text>}
-        <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['bottom', 'left', 'right']}>
+      <View style={{ padding: 16, gap: 16, backgroundColor: colors.background, flex: 1 }}>
+        <View style={{ gap: 6 }}>
+          <Text style={{ fontSize: 22, fontWeight: "800", color: colors.text }}>{goal.title}</Text>
+          {goal.target && <Text style={{ color: colors.textMuted }}>Target: {goal.target}</Text>}
+        </View>
+
+        <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
           <Pressable
             onPress={async () => {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               navigation.navigate("Consistency", { goalId });
             }}
             style={{
-              backgroundColor: "#3b82f6",
+              backgroundColor: colors.accent,
               paddingVertical: 8,
-              paddingHorizontal: 14,
-              borderRadius: 9999, // pill
+              paddingHorizontal: 16,
+              borderRadius: 9999,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "700" }}>See Consistency</Text>
+            <Text style={{ color: colors.buttonText, fontWeight: "700" }}>See Consistency</Text>
           </Pressable>
 
           <Pressable
             onPress={async () => {
               await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setIsEditing(!isEditing);
+              setIsEditing((prev) => !prev);
             }}
             style={{
-              backgroundColor: "#111827",
+              backgroundColor: colors.button,
               paddingVertical: 8,
-              paddingHorizontal: 14,
-              borderRadius: 9999, // pill
+              paddingHorizontal: 16,
+              borderRadius: 9999,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "700" }}>{isEditing ? "Finish Editing" : "Edit"}</Text>
+            <Text style={{ color: colors.buttonText, fontWeight: "700" }}>
+              {isEditing ? "Finish Editing" : "Edit"}
+            </Text>
           </Pressable>
         </View>
 
         {isEditing && (
-          <View style={{ borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, padding: 12, gap: 8 }}>
-          <Text style={{ fontWeight: "700" }}>Add sub-goal / task</Text>
-          <TextInput
-            placeholder="e.g., Take creatine"
-            value={subTitle}
-            onChangeText={setSubTitle}
-            style={{ borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 8, padding: 8 }}
-          />
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            {["once", "daily", "weekly"].map((f) => (
-              <Pressable
-                key={f}
-                onPress={async () => {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setFrequency(f as any);
-                }}
-                style={{
-                  paddingHorizontal: 10,
-                  paddingVertical: 6,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: frequency === f ? "#111827" : "#e5e7eb",
-                }}
-              >
-                <Text style={{ fontWeight: "600" }}>{f}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Pressable
-            onPress={async () => {
-              if (subTitle.trim()) {
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 12,
+              padding: 12,
+              gap: 10,
+              backgroundColor: colors.surface,
+            }}
+          >
+            <Text style={{ fontWeight: "700", color: colors.text }}>Add sub-goal / task</Text>
+            <TextInput
+              placeholder="e.g., Take creatine"
+              placeholderTextColor={colors.textMuted}
+              value={subTitle}
+              onChangeText={setSubTitle}
+              style={{
+                borderWidth: 1,
+                borderColor: colors.inputBorder,
+                backgroundColor: colors.inputBackground,
+                borderRadius: 10,
+                padding: 10,
+                color: colors.text,
+              }}
+            />
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              {["once", "daily", "weekly"].map((f) => {
+                const selected = frequency === f;
+                return (
+                  <Pressable
+                    key={f}
+                    onPress={async () => {
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setFrequency(f as typeof frequency);
+                    }}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: selected ? colors.accent : colors.border,
+                      backgroundColor: selected ? colors.surfaceMuted : colors.surface,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontWeight: "600",
+                        color: selected ? colors.accent : colors.text,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {f}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Pressable
+              onPress={async () => {
+                if (!subTitle.trim()) return;
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 addSubGoal(goalId, subTitle.trim(), frequency);
                 setSubTitle("");
-              }
-            }}
-            style={{ backgroundColor: "#111827", padding: 10, borderRadius: 8 }}
-          >
-            <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>Add</Text>
-          </Pressable>
-          
-          {/* Delete Goal Button - Only visible when editing */}
-          <Pressable
-            onPress={() => {
-              Alert.alert(
-                "Delete goal?",
-                `This will remove "${goal.title}" and all its sub-goals.`,
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Delete", style: "destructive", onPress: async () => {
-                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      deleteGoal(goal.id);
-                      // after delete, pop back to Home
-                      navigation.goBack();
-                    }
-                  },
-                ]
-              );
-            }}
-            style={{
-              backgroundColor: "#ef4444",
-              padding: 10,
-              borderRadius: 8,
-              marginTop: 8
-            }}
-          >
-            <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>Delete Goal</Text>
-          </Pressable>
-        </View>
+              }}
+              style={{ backgroundColor: colors.button, padding: 12, borderRadius: 10 }}
+            >
+              <Text style={{ color: colors.buttonText, textAlign: "center", fontWeight: "700" }}>Add</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                Alert.alert(
+                  "Delete goal?",
+                  `This will remove "${goal.title}" and all its sub-goals.`,
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete",
+                      style: "destructive",
+                      onPress: async () => {
+                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        deleteGoal(goal.id);
+                        navigation.goBack();
+                      },
+                    },
+                  ]
+                );
+              }}
+              style={{
+                backgroundColor: colors.danger,
+                padding: 12,
+                borderRadius: 10,
+                marginTop: 4,
+              }}
+            >
+              <Text style={{ color: colors.dangerText, textAlign: "center", fontWeight: "700" }}>
+                Delete Goal
+              </Text>
+            </Pressable>
+          </View>
         )}
 
-        {/* Pending Tasks Section */}
-        <Text style={{ fontWeight: "700", marginTop: 4 }}>Tasks</Text>
-        {(() => {
-          const today = new Date();
-          const pendingTasks = goal.subGoals.filter(item => 
-            !item.completions.some(date => 
-              format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
-            )
-          );
-          
-          if (pendingTasks.length === 0) {
-            return (
-              <View style={{
-                padding: 20,
-                borderRadius: 12,
-                backgroundColor: "#f0fdf4",
-                borderWidth: 1,
-                borderColor: "#bbf7d0",
-                alignItems: "center",
-                marginTop: 8
-              }}>
-                <Text style={{ fontWeight: "700", fontSize: 18, color: "#166534", marginBottom: 4 }}>
+        <View style={{ flex: 1, gap: 16 }}>
+          <View>
+            <Text style={{ fontWeight: "700", color: colors.text }}>Tasks</Text>
+            {pendingTasks.length === 0 ? (
+              <View
+                style={{
+                  padding: 20,
+                  borderRadius: 12,
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  alignItems: "center",
+                  marginTop: 10,
+                  gap: 4,
+                }}
+              >
+                <Text style={{ fontWeight: "700", fontSize: 18, color: colors.success }}>
                   All done for today!
                 </Text>
-                <Text style={{ color: "#16a34a", textAlign: "center" }}>
-                  You're right on track! All tasks completed.
+                <Text style={{ color: colors.textMuted, textAlign: "center" }}>
+                  You are on track. Everything is checked off.
                 </Text>
               </View>
-            );
-          }
-          
-          return (
-            <FlatList
-              data={pendingTasks}
-              keyExtractor={(t) => t.id}
-              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-              renderItem={({ item }) => (
-                <Pressable
-                  onPress={async () => {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    toggleTask(goalId, item.id);
-                  }}
-                  style={{
-                    padding: 12,
-                    borderWidth: 1,
-                    borderColor: "#e5e7eb",
-                    borderRadius: 10,
-                    backgroundColor: "white",
-                  }}
-                >
-                  <Text style={{ fontWeight: "700" }}>{item.title}</Text>
-                  <Text style={{ color: "#6b7280" }}>Frequency: {item.frequency}</Text>
-                  <Text style={{ color: "#6b7280" }}>Done today: No</Text>
-                </Pressable>
-              )}
-            />
-          );
-        })()}
+            ) : (
+              <FlatList
+                data={pendingTasks}
+                keyExtractor={(t) => t.id}
+                ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                renderItem={({ item }) => (
+                  <TaskCard
+                    item={item}
+                    completed={false}
+                    onToggle={() => {
+                      void handleSubGoalPress(item.id);
+                    }}
+                    onDelete={() => handleSubGoalLongPress(item.id, item.title)}
+                    colors={colors}
+                  />
+                )}
+              />
+            )}
+          </View>
 
-        {/* Completed Tasks Section */}
-        {goal.subGoals.filter(item => {
-          const today = new Date();
-          return item.completions.some(date => 
-            format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
-          );
-        }).length > 0 && (
-          <>
-            <Text style={{ fontWeight: "700", marginTop: 16, color: "#6b7280" }}>Completed Today</Text>
-            <FlatList
-              data={goal.subGoals.filter(item => {
-                const today = new Date();
-                return item.completions.some(date => 
-                  format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
-                );
-              })}
-              keyExtractor={(t) => t.id}
-              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-              renderItem={({ item }) => (
-                <Pressable
-                  onPress={async () => {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    toggleTask(goalId, item.id);
-                  }}
-                  style={{
-                    padding: 12,
-                    borderWidth: 1,
-                    borderColor: "#d1d5db",
-                    borderRadius: 10,
-                    backgroundColor: "#f9fafb",
-                    opacity: 0.7,
-                  }}
-                >
-                  <Text style={{ fontWeight: "700", color: "#6b7280", textDecorationLine: "line-through" }}>{item.title}</Text>
-                  <Text style={{ color: "#9ca3af" }}>Frequency: {item.frequency}</Text>
-                  <Text style={{ color: "#10b981" }}>Done today: Yes ✓</Text>
-                </Pressable>
-              )}
-            />
-          </>
-        )}
+          {completedToday.length > 0 && (
+            <View style={{ gap: 10 }}>
+              <Text style={{ fontWeight: "700", color: colors.textMuted }}>Completed Today</Text>
+              <FlatList
+                data={completedToday}
+                keyExtractor={(t) => t.id}
+                ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                renderItem={({ item }) => (
+                  <TaskCard
+                    item={item}
+                    completed
+                    onToggle={() => {
+                      void handleSubGoalPress(item.id);
+                    }}
+                    onDelete={() => handleSubGoalLongPress(item.id, item.title)}
+                    colors={colors}
+                  />
+                )}
+              />
+            </View>
+          )}
+        </View>
       </View>
     </SafeAreaView>
   );

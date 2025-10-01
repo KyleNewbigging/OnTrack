@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useStore } from "../store";
 import Heatmap from "./Heatmap";
 import { format } from "date-fns";
+import { useThemeColors } from "../theme";
 
 type RootStackParamList = {
   Home: undefined;
@@ -15,28 +16,41 @@ type RootStackParamList = {
 
 type OverviewProps = NativeStackScreenProps<RootStackParamList, "Consistency">;
 
-export default function OverviewScreen({ navigation, route }: OverviewProps) {
+export default function OverviewScreen({ route }: OverviewProps) {
   const { goalId } = route.params;
+  const colors = useThemeColors();
   const goal = useStore((s) => s.goals.find((g) => g.id === goalId)!);
 
-  if (!goal) return <Text>Goal not found</Text>;
+  if (!goal) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background }}
+        edges={['bottom', 'left', 'right']}
+      >
+        <Text style={{ color: colors.text }}>Goal not found</Text>
+      </SafeAreaView>
+    );
+  }
 
-  // Transform task completions into heatmap format for each task
-  const getTaskHeatmapData = (taskCompletions: Date[]) => {
-    const heatmapData: Record<string, number> = {};
-    taskCompletions.forEach(date => {
-      const dateKey = format(date, "yyyy-MM-dd");
-      heatmapData[dateKey] = 1; // 1 indicates completion
+  const buildHeatmap = (dates: Date[]) => {
+    const map: Record<string, number> = {};
+    dates.forEach((date) => {
+      const key = format(date, "yyyy-MM-dd");
+      map[key] = 1;
     });
-    return heatmapData;
+    return map;
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
-      <View style={{ padding: 16, gap: 16 }}>
-        <View>
-          <Text style={{ fontSize: 22, fontWeight: "800" }}>{goal.title} - Consistency</Text>
-          <Text style={{ color: "#374151", marginTop: 4 }}>Task completion heatmaps</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['bottom', 'left', 'right']}>
+      <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: colors.background }}>
+        <View style={{ gap: 4 }}>
+          <Text style={{ fontSize: 22, fontWeight: "800", color: colors.text }}>
+            {goal.title} / Consistency
+          </Text>
+          <Text style={{ color: colors.textMuted }}>
+            Each tile marks a day you logged progress.
+          </Text>
         </View>
 
         <FlatList
@@ -44,24 +58,26 @@ export default function OverviewScreen({ navigation, route }: OverviewProps) {
           keyExtractor={(task) => task.id}
           ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
           renderItem={({ item: task }) => (
-            <View style={{ 
-              borderWidth: 1, 
-              borderColor: "#e5e7eb", 
-              borderRadius: 10, 
-              padding: 12,
-              backgroundColor: "white"
-            }}>
-              <View style={{ marginBottom: 8 }}>
-                <Text style={{ fontSize: 16, fontWeight: "700" }}>{task.title}</Text>
-                <Text style={{ color: "#6b7280", fontSize: 14 }}>
-                  Frequency: {task.frequency} • Completions: {task.completions.length}
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 12,
+                padding: 12,
+                backgroundColor: colors.surface,
+                gap: 8,
+              }}
+            >
+              <View>
+                <Text style={{ fontSize: 16, fontWeight: "700", color: colors.text }}>
+                  {task.title}
+                </Text>
+                <Text style={{ color: colors.textMuted, fontSize: 14 }}>
+                  Frequency: {task.frequency} - Completions: {task.completions.length}
                 </Text>
               </View>
-              
-              <Heatmap 
-                startOffsetDays={180} 
-                values={getTaskHeatmapData(task.completions)} 
-              />
+
+              <Heatmap startOffsetDays={180} values={buildHeatmap(task.completions)} />
             </View>
           )}
           showsVerticalScrollIndicator={false}

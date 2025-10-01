@@ -251,11 +251,14 @@ export const getCurrentMode = () => CURRENT_MODE;
 
 interface State {
     goals: Goal[];
+    theme: 'light' | 'dark';
     addGoal: (title: string, target?: string) => void;
     addSubGoal: (goalId: string, title: string, frequency: Frequency) => void;
     toggleTaskCompletion: (goalId: string, subId: string, date?: Date) => void;
     completionsByDate: () => Record<string, number>;
+    deleteSubGoal: (goalId: string, subId: string) => void;
     deleteGoal: (goalId: string) => void;
+    toggleTheme: () => void;
 }
 
 // Get initial goals based on store mode
@@ -268,6 +271,7 @@ export const useStore = create<State>()(
     persist(
         (set, get) => ({
             goals: getInitialGoals(), // Dynamic initialization based on store mode
+            theme: 'light',
 
             addGoal: (title, target) =>
                 set((s) => ({
@@ -326,9 +330,26 @@ export const useStore = create<State>()(
                 }
                 return map;
             },
+            deleteSubGoal: (goalId, subId) => {
+                set((s) => ({
+                    goals: s.goals.map((g) =>
+                        g.id === goalId
+                            ? {
+                                ...g,
+                                subGoals: g.subGoals.filter((t) => t.id !== subId),
+                            }
+                            : g
+                    ),
+                }));
+            },
             deleteGoal: (goalId) => {
                 set((s) => ({
                     goals: s.goals.filter((g) => g.id !== goalId),
+                }));
+            },
+            toggleTheme: () => {
+                set((s) => ({
+                    theme: s.theme === 'dark' ? 'light' : 'dark',
                 }));
             },
         }),
@@ -348,6 +369,9 @@ export const useStore = create<State>()(
                                 ) || []
                             })) || []
                         }));
+                    }
+                    if (state && !state.theme) {
+                        state.theme = 'light';
                     }
                 };
             },
