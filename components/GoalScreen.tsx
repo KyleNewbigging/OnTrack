@@ -9,7 +9,7 @@ type RootStackParamList = {
   Home: undefined;
   Goal: { goalId: string };
   NewGoal: undefined;
-  Overview: { goalId: string };
+  Consistency: { goalId: string };
 };
 
 type GoalProps = NativeStackScreenProps<RootStackParamList, "Goal">;
@@ -34,7 +34,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         {goal.target && <Text style={{ color: "#374151" }}>Target: {goal.target}</Text>}
         <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
           <Pressable
-            onPress={() => navigation.navigate("Overview", { goalId })}
+            onPress={() => navigation.navigate("Consistency", { goalId })}
             style={{
               backgroundColor: "#3b82f6",
               paddingVertical: 8,
@@ -42,7 +42,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               borderRadius: 9999, // pill
             }}
           >
-            <Text style={{ color: "white", fontWeight: "700" }}>Overview</Text>
+            <Text style={{ color: "white", fontWeight: "700" }}>See Consistency</Text>
           </Pressable>
 
           <Pressable

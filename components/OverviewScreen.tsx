@@ -10,10 +10,10 @@ type RootStackParamList = {
   Home: undefined;
   Goal: { goalId: string };
   NewGoal: undefined;
-  Overview: { goalId: string };
+  Consistency: { goalId: string };
 };
 
-type OverviewProps = NativeStackScreenProps<RootStackParamList, "Overview">;
+type OverviewProps = NativeStackScreenProps<RootStackParamList, "Consistency">;
 
 export default function OverviewScreen({ navigation, route }: OverviewProps) {
   const { goalId } = route.params;
@@ -35,7 +35,7 @@ export default function OverviewScreen({ navigation, route }: OverviewProps) {
     <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
       <View style={{ padding: 16, gap: 16 }}>
         <View>
-          <Text style={{ fontSize: 22, fontWeight: "800" }}>{goal.title} - Overview</Text>
+          <Text style={{ fontSize: 22, fontWeight: "800" }}>{goal.title} - Consistency</Text>
           <Text style={{ color: "#374151", marginTop: 4 }}>Task completion heatmaps</Text>
         </View>
 

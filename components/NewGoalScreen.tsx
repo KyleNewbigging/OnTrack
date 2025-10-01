@@ -8,7 +8,7 @@ type RootStackParamList = {
   Home: undefined;
   Goal: { goalId: string };
   NewGoal: undefined;
-  Overview: { goalId: string };
+  Consistency: { goalId: string };
 };
 
 type NewGoalProps = NativeStackScreenProps<RootStackParamList, "NewGoal">;
