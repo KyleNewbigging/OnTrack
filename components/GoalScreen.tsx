@@ -54,34 +54,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               borderRadius: 9999, // pill
             }}
           >
-            <Text style={{ color: "white", fontWeight: "700" }}>{isEditing ? "Cancel" : "Edit"}</Text>
-          </Pressable>
-          
-          <Pressable
-            onPress={() => {
-              Alert.alert(
-                "Delete goal?",
-                `This will remove "${goal.title}" and all its sub-goals.`,
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Delete", style: "destructive", onPress: () => {
-                      deleteGoal(goal.id);
-                      // after delete, pop back to Home
-                      navigation.goBack();
-                    }
-                  },
-                ]
-              );
-            }}
-            style={{
-              backgroundColor: "#ef4444",
-              paddingVertical: 8,
-              paddingHorizontal: 14,
-              borderRadius: 9999, // pill
-            }}
-          >
-            <Text style={{ color: "white", fontWeight: "700" }}>Delete</Text>
+            <Text style={{ color: "white", fontWeight: "700" }}>{isEditing ? "Finish Editing" : "Edit"}</Text>
           </Pressable>
         </View>
 
@@ -121,6 +94,34 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             style={{ backgroundColor: "#111827", padding: 10, borderRadius: 8 }}
           >
             <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>Add</Text>
+          </Pressable>
+          
+          {/* Delete Goal Button - Only visible when editing */}
+          <Pressable
+            onPress={() => {
+              Alert.alert(
+                "Delete goal?",
+                `This will remove "${goal.title}" and all its sub-goals.`,
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Delete", style: "destructive", onPress: () => {
+                      deleteGoal(goal.id);
+                      // after delete, pop back to Home
+                      navigation.goBack();
+                    }
+                  },
+                ]
+              );
+            }}
+            style={{
+              backgroundColor: "#ef4444",
+              padding: 10,
+              borderRadius: 8,
+              marginTop: 8
+            }}
+          >
+            <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>Delete Goal</Text>
           </Pressable>
         </View>
         )}

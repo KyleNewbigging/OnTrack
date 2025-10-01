@@ -74,7 +74,8 @@ Use ✅ when done, keep lines short and actionable.
 - [x] Fix warning: SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. ✅
 - [x] Unable to resolve asset "./assets/splash.png" from "splash.image" in your app.json or app.config.js ✅
  - [x] when a task is clicked on a day we should should moved down to a completed section of the page. Perhaps greyed out. this Should be toggle-able back to the todo section. The current behaviour is green highlighting. ✅
- - [ ] Delete should be under the edit button
- - [ ] Edit button shouldn't say cancel when the edit menu is open, it should instead say Finish Editing
+ - [x] Delete should be under the edit button ✅
+ - [x] Edit button shouldn't say cancel when the edit menu is open, it should instead say Finish Editing ✅
  - [ ] Refactor overview to be called Heat Maps and the component HeatMapScreen
  - [x] there is a weird element that covers a little bit of the top HomePage ✅
+ - [ ] when we delete tasks, and no longer need to do them. we should have some sort of archiving so that we can look back at them, but they shouln't continue to show up
