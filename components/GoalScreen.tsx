@@ -125,34 +125,100 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         </View>
         )}
 
+        {/* Pending Tasks Section */}
         <Text style={{ fontWeight: "700", marginTop: 4 }}>Tasks</Text>
-        <FlatList
-          data={goal.subGoals}
-          keyExtractor={(t) => t.id}
-          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-          renderItem={({ item }) => {
-            const today = new Date();
-            const isDone = item.completions.some(date => 
+        {(() => {
+          const today = new Date();
+          const pendingTasks = goal.subGoals.filter(item => 
+            !item.completions.some(date => 
               format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
-            );
+            )
+          );
+          
+          if (pendingTasks.length === 0) {
             return (
-              <Pressable
-                onPress={() => toggleTask(goalId, item.id)}
-                style={{
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: isDone ? "#10b981" : "#e5e7eb",
-                  borderRadius: 10,
-                  backgroundColor: isDone ? "#ecfdf5" : "white",
-                }}
-              >
-                <Text style={{ fontWeight: "700" }}>{item.title}</Text>
-                <Text style={{ color: "#6b7280" }}>Frequency: {item.frequency}</Text>
-                <Text style={{ color: "#6b7280" }}>Done today: {isDone ? "Yes" : "No"}</Text>
-              </Pressable>
+              <View style={{
+                padding: 20,
+                borderRadius: 12,
+                backgroundColor: "#f0fdf4",
+                borderWidth: 1,
+                borderColor: "#bbf7d0",
+                alignItems: "center",
+                marginTop: 8
+              }}>
+                <Text style={{ fontWeight: "700", fontSize: 18, color: "#166534", marginBottom: 4 }}>
+                  All done for today!
+                </Text>
+                <Text style={{ color: "#16a34a", textAlign: "center" }}>
+                  You're right on track! All tasks completed.
+                </Text>
+              </View>
             );
-          }}
-        />
+          }
+          
+          return (
+            <FlatList
+              data={pendingTasks}
+              keyExtractor={(t) => t.id}
+              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => toggleTask(goalId, item.id)}
+                  style={{
+                    padding: 12,
+                    borderWidth: 1,
+                    borderColor: "#e5e7eb",
+                    borderRadius: 10,
+                    backgroundColor: "white",
+                  }}
+                >
+                  <Text style={{ fontWeight: "700" }}>{item.title}</Text>
+                  <Text style={{ color: "#6b7280" }}>Frequency: {item.frequency}</Text>
+                  <Text style={{ color: "#6b7280" }}>Done today: No</Text>
+                </Pressable>
+              )}
+            />
+          );
+        })()}
+
+        {/* Completed Tasks Section */}
+        {goal.subGoals.filter(item => {
+          const today = new Date();
+          return item.completions.some(date => 
+            format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
+          );
+        }).length > 0 && (
+          <>
+            <Text style={{ fontWeight: "700", marginTop: 16, color: "#6b7280" }}>Completed Today</Text>
+            <FlatList
+              data={goal.subGoals.filter(item => {
+                const today = new Date();
+                return item.completions.some(date => 
+                  format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
+                );
+              })}
+              keyExtractor={(t) => t.id}
+              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => toggleTask(goalId, item.id)}
+                  style={{
+                    padding: 12,
+                    borderWidth: 1,
+                    borderColor: "#d1d5db",
+                    borderRadius: 10,
+                    backgroundColor: "#f9fafb",
+                    opacity: 0.7,
+                  }}
+                >
+                  <Text style={{ fontWeight: "700", color: "#6b7280", textDecorationLine: "line-through" }}>{item.title}</Text>
+                  <Text style={{ color: "#9ca3af" }}>Frequency: {item.frequency}</Text>
+                  <Text style={{ color: "#10b981" }}>Done today: Yes ✓</Text>
+                </Pressable>
+              )}
+            />
+          </>
+        )}
       </View>
     </SafeAreaView>
   );
