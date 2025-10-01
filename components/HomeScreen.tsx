@@ -2,6 +2,7 @@ import React from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
 import { useStore, debugAsyncStorage, getCurrentMode } from "../store";
 import RadarChart from "./RadarChart";
 
@@ -36,14 +37,20 @@ export default function HomeScreen({ navigation }: HomeProps) {
           </Text>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Pressable
-              onPress={() => navigation.navigate("NewGoal")}
+              onPress={async () => {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate("NewGoal");
+              }}
               style={{ backgroundColor: "#111827", padding: 12, borderRadius: 10, flex: 1 }}
             >
               <Text style={{ color: "white", fontWeight: "600", textAlign: "center" }}>+ New Goal</Text>
             </Pressable>
             
             <Pressable
-              onPress={() => debugAsyncStorage()}
+              onPress={async () => {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                debugAsyncStorage();
+              }}
               style={{ backgroundColor: "#ef4444", padding: 12, borderRadius: 10 }}
             >
               <Text style={{ color: "white", fontWeight: "600", textAlign: "center" }}>Debug</Text>
@@ -61,7 +68,10 @@ export default function HomeScreen({ navigation }: HomeProps) {
           {goals.map((goal, index) => (
             <View key={goal.id}>
               <Pressable
-                onPress={() => navigation.navigate("Goal", { goalId: goal.id })}
+                onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  navigation.navigate("Goal", { goalId: goal.id });
+                }}
                 style={{ borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, padding: 12 }}
               >
                 <Text style={{ fontSize: 16, fontWeight: "700" }}>{goal.title}</Text>

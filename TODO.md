@@ -35,8 +35,8 @@ Use ✅ when done, keep lines short and actionable.
 ---
 
 ## Haptics (Later)
-- [ ] Light vibration on confirm delete
-- [ ] Light vibration on toggle task
+- [x] Light vibration on confirm delete ✅
+- [x] Light vibration on toggle task ✅
 - *Note:*  
   - Install: `npm i expo-haptics`  
   - Import: `import * as Haptics from "expo-haptics";`  

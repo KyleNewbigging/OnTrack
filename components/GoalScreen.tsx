@@ -2,6 +2,7 @@ import React from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, TextInput, FlatList, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
 import { useStore } from "../store";
 import { format } from "date-fns";
 
@@ -34,7 +35,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         {goal.target && <Text style={{ color: "#374151" }}>Target: {goal.target}</Text>}
         <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
           <Pressable
-            onPress={() => navigation.navigate("Consistency", { goalId })}
+            onPress={async () => {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate("Consistency", { goalId });
+            }}
             style={{
               backgroundColor: "#3b82f6",
               paddingVertical: 8,
@@ -46,7 +50,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
           </Pressable>
 
           <Pressable
-            onPress={() => setIsEditing(!isEditing)}
+            onPress={async () => {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setIsEditing(!isEditing);
+            }}
             style={{
               backgroundColor: "#111827",
               paddingVertical: 8,
@@ -71,7 +78,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             {["once", "daily", "weekly"].map((f) => (
               <Pressable
                 key={f}
-                onPress={() => setFrequency(f as any)}
+                onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setFrequency(f as any);
+                }}
                 style={{
                   paddingHorizontal: 10,
                   paddingVertical: 6,
@@ -85,8 +95,9 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             ))}
           </View>
           <Pressable
-            onPress={() => {
+            onPress={async () => {
               if (subTitle.trim()) {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 addSubGoal(goalId, subTitle.trim(), frequency);
                 setSubTitle("");
               }
@@ -105,7 +116,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 [
                   { text: "Cancel", style: "cancel" },
                   {
-                    text: "Delete", style: "destructive", onPress: () => {
+                    text: "Delete", style: "destructive", onPress: async () => {
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       deleteGoal(goal.id);
                       // after delete, pop back to Home
                       navigation.goBack();
@@ -164,7 +176,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
               renderItem={({ item }) => (
                 <Pressable
-                  onPress={() => toggleTask(goalId, item.id)}
+                  onPress={async () => {
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    toggleTask(goalId, item.id);
+                  }}
                   style={{
                     padding: 12,
                     borderWidth: 1,
@@ -202,7 +217,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
               renderItem={({ item }) => (
                 <Pressable
-                  onPress={() => toggleTask(goalId, item.id)}
+                  onPress={async () => {
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    toggleTask(goalId, item.id);
+                  }}
                   style={{
                     padding: 12,
                     borderWidth: 1,
