@@ -2,6 +2,7 @@ import React, { useState, useLayoutEffect } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, ScrollView, Alert, Switch, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from "expo-haptics";
 import { useStore, debugAsyncStorage, getCurrentMode } from "../store";
@@ -168,10 +169,62 @@ export default function HomeScreen({ navigation }: HomeProps) {
                 backgroundColor: theme.danger, 
                 padding: 12, 
                 borderRadius: 10,
-                alignItems: 'center'
+                alignItems: 'center',
+                marginBottom: 12
               }}
             >
               <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Debug Storage</Text>
+            </Pressable>
+
+            {/* Clear Stores Button */}
+            <Pressable
+              onPress={async () => {
+                Alert.alert(
+                  "Clear All Data?",
+                  "This will permanently delete all goals, tasks, and completions. This action cannot be undone.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Clear All", 
+                      style: "destructive", 
+                      onPress: async () => {
+                        try {
+                          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                          
+                          // Get all keys and clear OnTrack related storage
+                          const allKeys = await AsyncStorage.getAllKeys();
+                          const onTrackKeys = allKeys.filter(key => 
+                            key.startsWith('ontrack') || key === 'theme'
+                          );
+                          
+                          if (onTrackKeys.length > 0) {
+                            await AsyncStorage.multiRemove(onTrackKeys);
+                          }
+                          
+                          setSettingsVisible(false);
+                          
+                          Alert.alert(
+                            "Data Cleared",
+                            "All data has been cleared. Please restart the app to see fresh data.",
+                            [{ text: "OK" }]
+                          );
+                        } catch (error) {
+                          console.error('Error clearing storage:', error);
+                          Alert.alert("Error", "Failed to clear data. Please try again.");
+                        }
+                      }
+                    }
+                  ]
+                );
+              }}
+              style={{ 
+                backgroundColor: theme.warning, 
+                padding: 12, 
+                borderRadius: 10,
+                alignItems: 'center'
+              }}
+            >
+              <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Clear All Data</Text>
             </Pressable>
           </View>
         </View>
