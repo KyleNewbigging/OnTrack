@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import Svg, { Polygon, Line, Circle, Text as SvgText } from "react-native-svg";
 import { Goal } from "../types";
 import { format } from "date-fns";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface RadarChartProps {
   goals: Goal[];
@@ -10,6 +11,8 @@ interface RadarChartProps {
 }
 
 export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
+  const { theme, isDark } = useTheme();
+  
   if (goals.length === 0) {
     return (
       <View style={{ 
@@ -18,12 +21,12 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
         justifyContent: "center", 
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "#e5e7eb",
+        borderColor: theme.border,
         borderRadius: 10,
-        backgroundColor: "#f9fafb"
+        backgroundColor: theme.surface
       }}>
-        <Text style={{ color: "#6b7280", fontSize: 14 }}>No goals yet</Text>
-        <Text style={{ color: "#9ca3af", fontSize: 12 }}>Create goals to see radar chart</Text>
+        <Text style={{ color: theme.textSecondary, fontSize: 14 }}>No goals yet</Text>
+        <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Create goals to see radar chart</Text>
       </View>
     );
   }
@@ -125,13 +128,13 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
   return (
     <View style={{ 
       borderWidth: 1, 
-      borderColor: "#e5e7eb", 
+      borderColor: theme.border, 
       borderRadius: 10, 
       padding: 16,
-      backgroundColor: "white",
+      backgroundColor: theme.surface,
       alignItems: "center"
     }}>
-      <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 12 }}>
+      <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 12, color: theme.text }}>
         Goal Consistency Overview
       </Text>
       
@@ -144,7 +147,7 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
             cy={centerY}
             r={radius * level}
             fill="transparent"
-            stroke="#f3f4f6"
+            stroke={theme.border}
             strokeWidth={1}
           />
         ))}
@@ -157,7 +160,7 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
             y1={centerY}
             x2={axis.endX}
             y2={axis.endY}
-            stroke="#e5e7eb"
+            stroke={theme.border}
             strokeWidth={1}
           />
         ))}
@@ -166,8 +169,8 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
         {dataPoints.length >= 3 && (
           <Polygon
             points={polygonPoints}
-            fill="rgba(59, 130, 246, 0.2)"
-            stroke="#3b82f6"
+            fill={isDark ? "rgba(59, 130, 246, 0.3)" : "rgba(59, 130, 246, 0.2)"}
+            stroke={theme.primary}
             strokeWidth={2}
           />
         )}
@@ -180,7 +183,7 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
             cy={point.y}
             r={5}
             fill={colors[index % colors.length]}
-            stroke="white"
+            stroke={theme.surface}
             strokeWidth={2}
           />
         ))}
@@ -194,7 +197,7 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
             x={centerX + 5}
             y={centerY - (radius * level)}
             fontSize="10"
-            fill="#9ca3af"
+            fill={theme.textSecondary}
             textAnchor="start"
           >
             {Math.round(level * 100)}%
@@ -217,10 +220,10 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
               backgroundColor: colors[index % colors.length],
               borderRadius: 5,
               borderWidth: 1,
-              borderColor: "white",
+              borderColor: theme.surface,
               marginRight: 4
             }} />
-            <Text style={{ fontSize: 10, color: "#6b7280" }}>
+            <Text style={{ fontSize: 10, color: theme.textSecondary }}>
               {data.title}: {Math.round(data.percentage * 100)}%
             </Text>
           </View>

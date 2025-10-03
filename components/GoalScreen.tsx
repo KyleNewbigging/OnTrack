@@ -4,7 +4,8 @@ import { Text, View, Pressable, TextInput, FlatList, Alert } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useStore } from "../store";
-import { format } from "date-fns";
+import { useTheme } from "../contexts/ThemeContext";
+import { format, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 
 type RootStackParamList = {
   Home: undefined;
@@ -21,6 +22,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const addSubGoal = useStore((s) => s.addSubGoal);
   const toggleTask = useStore((s) => s.toggleTaskCompletion);
   const deleteGoal = useStore((s) => s.deleteGoal);
+  const { theme } = useTheme();
 
   const [subTitle, setSubTitle] = React.useState("");
   const [frequency, setFrequency] = React.useState<"once" | "daily" | "weekly">("daily");
@@ -29,10 +31,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   if (!goal) return <Text>Not found</Text>;
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
       <View style={{ padding: 16, gap: 12 }}>
-        <Text style={{ fontSize: 22, fontWeight: "800" }}>{goal.title}</Text>
-        {goal.target && <Text style={{ color: "#374151" }}>Target: {goal.target}</Text>}
+        <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text }}>{goal.title}</Text>
+        {goal.target && <Text style={{ color: theme.textSecondary }}>Target: {goal.target}</Text>}
         <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
           <Pressable
             onPress={async () => {
@@ -55,24 +57,25 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               setIsEditing(!isEditing);
             }}
             style={{
-              backgroundColor: "#111827",
+              backgroundColor: theme.textSecondary,
               paddingVertical: 8,
               paddingHorizontal: 14,
               borderRadius: 9999, // pill
             }}
           >
-            <Text style={{ color: "white", fontWeight: "700" }}>{isEditing ? "Finish Editing" : "Edit"}</Text>
+            <Text style={{ color: theme.background, fontWeight: "700" }}>{isEditing ? "Finish Editing" : "Edit"}</Text>
           </Pressable>
         </View>
 
         {isEditing && (
-          <View style={{ borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, padding: 12, gap: 8 }}>
-          <Text style={{ fontWeight: "700" }}>Add sub-goal / task</Text>
+          <View style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 10, padding: 12, gap: 8, backgroundColor: theme.surface }}>
+          <Text style={{ fontWeight: "700", color: theme.text }}>Add sub-goal / task</Text>
           <TextInput
             placeholder="e.g., Take creatine"
             value={subTitle}
             onChangeText={setSubTitle}
-            style={{ borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 8, padding: 8 }}
+            style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 8, padding: 8, backgroundColor: theme.background, color: theme.text }}
+            placeholderTextColor={theme.textSecondary}
           />
           <View style={{ flexDirection: "row", gap: 8 }}>
             {["once", "daily", "weekly"].map((f) => (
@@ -87,10 +90,11 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                   paddingVertical: 6,
                   borderRadius: 8,
                   borderWidth: 1,
-                  borderColor: frequency === f ? "#111827" : "#e5e7eb",
+                  borderColor: frequency === f ? theme.primary : theme.border,
+                  backgroundColor: frequency === f ? theme.primary + "20" : "transparent",
                 }}
               >
-                <Text style={{ fontWeight: "600" }}>{f}</Text>
+                <Text style={{ fontWeight: "600", color: frequency === f ? theme.primary : theme.text }}>{f}</Text>
               </Pressable>
             ))}
           </View>
@@ -102,7 +106,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 setSubTitle("");
               }
             }}
-            style={{ backgroundColor: "#111827", padding: 10, borderRadius: 8 }}
+            style={{ backgroundColor: theme.primary, padding: 10, borderRadius: 8 }}
           >
             <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>Add</Text>
           </Pressable>
@@ -127,7 +131,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               );
             }}
             style={{
-              backgroundColor: "#ef4444",
+              backgroundColor: theme.danger,
               padding: 10,
               borderRadius: 8,
               marginTop: 8
@@ -139,7 +143,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         )}
 
         {/* Pending Tasks Section */}
-        <Text style={{ fontWeight: "700", marginTop: 4 }}>Tasks</Text>
+        <Text style={{ fontWeight: "700", marginTop: 4, color: theme.text }}>Tasks</Text>
         {(() => {
           const today = new Date();
           const pendingTasks = goal.subGoals.filter(item => 
@@ -153,16 +157,16 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               <View style={{
                 padding: 20,
                 borderRadius: 12,
-                backgroundColor: "#f0fdf4",
+                backgroundColor: theme.completionCard,
                 borderWidth: 1,
-                borderColor: "#bbf7d0",
+                borderColor: theme.completionCardBorder,
                 alignItems: "center",
                 marginTop: 8
               }}>
-                <Text style={{ fontWeight: "700", fontSize: 18, color: "#166534", marginBottom: 4 }}>
+                <Text style={{ fontWeight: "700", fontSize: 18, color: theme.success, marginBottom: 4 }}>
                   All done for today!
                 </Text>
-                <Text style={{ color: "#16a34a", textAlign: "center" }}>
+                <Text style={{ color: theme.success, textAlign: "center" }}>
                   You're right on track! All tasks completed.
                 </Text>
               </View>
@@ -183,14 +187,14 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                   style={{
                     padding: 12,
                     borderWidth: 1,
-                    borderColor: "#e5e7eb",
+                    borderColor: theme.border,
                     borderRadius: 10,
-                    backgroundColor: "white",
+                    backgroundColor: theme.surface,
                   }}
                 >
-                  <Text style={{ fontWeight: "700" }}>{item.title}</Text>
-                  <Text style={{ color: "#6b7280" }}>Frequency: {item.frequency}</Text>
-                  <Text style={{ color: "#6b7280" }}>Done today: No</Text>
+                  <Text style={{ fontWeight: "700", color: theme.text }}>{item.title}</Text>
+                  <Text style={{ color: theme.textSecondary }}>Frequency: {item.frequency}</Text>
+                  <Text style={{ color: theme.textSecondary }}>Done today: No</Text>
                 </Pressable>
               )}
             />
@@ -205,7 +209,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
           );
         }).length > 0 && (
           <>
-            <Text style={{ fontWeight: "700", marginTop: 16, color: "#6b7280" }}>Completed Today</Text>
+            <Text style={{ fontWeight: "700", marginTop: 16, color: theme.textSecondary }}>Completed Today</Text>
             <FlatList
               data={goal.subGoals.filter(item => {
                 const today = new Date();
@@ -224,15 +228,15 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                   style={{
                     padding: 12,
                     borderWidth: 1,
-                    borderColor: "#d1d5db",
+                    borderColor: theme.completedBorder,
                     borderRadius: 10,
-                    backgroundColor: "#f9fafb",
+                    backgroundColor: theme.completedBackground,
                     opacity: 0.7,
                   }}
                 >
-                  <Text style={{ fontWeight: "700", color: "#6b7280", textDecorationLine: "line-through" }}>{item.title}</Text>
-                  <Text style={{ color: "#9ca3af" }}>Frequency: {item.frequency}</Text>
-                  <Text style={{ color: "#10b981" }}>Done today: Yes ✓</Text>
+                  <Text style={{ fontWeight: "700", color: theme.textSecondary, textDecorationLine: "line-through" }}>{item.title}</Text>
+                  <Text style={{ color: theme.textSecondary }}>Frequency: {item.frequency}</Text>
+                  <Text style={{ color: theme.success }}>Done today: Yes ✓</Text>
                 </Pressable>
               )}
             />
