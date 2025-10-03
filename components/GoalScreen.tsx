@@ -264,14 +264,30 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                       {item.frequency === "custom" && item.customFrequency ? (() => {
                         const progress = getCustomFrequencyProgress(item, new Date());
                         return (
-                          <>
-                            <Text style={{ color: theme.textSecondary }}>
+                          <View style={{ marginTop: 8 }}>
+                            <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 4 }}>
                               {progress.completed}/{progress.target} times this {item.customFrequency.type.slice(0, -2)}
                             </Text>
-                            <Text style={{ color: theme.textSecondary }}>
-                              {progress.target - progress.completed} more to go
-                            </Text>
-                          </>
+                            {/* Segmented Progress Bar */}
+                            <View style={{ flexDirection: "row", gap: 2 }}>
+                              {Array.from({ length: progress.target }, (_, index) => (
+                                <View
+                                  key={index}
+                                  style={{
+                                    flex: 1,
+                                    height: 6,
+                                    backgroundColor: index < progress.completed ? theme.primary : theme.border,
+                                    borderRadius: 3,
+                                  }}
+                                />
+                              ))}
+                            </View>
+                            {progress.target > progress.completed && (
+                              <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 2 }}>
+                                {progress.target - progress.completed} more to go
+                              </Text>
+                            )}
+                          </View>
                         );
                       })() : (
                         <>
@@ -288,21 +304,26 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         })()}
 
         {/* Completed Tasks Section */}
-        {goal.subGoals.filter(item => {
+        {(() => {
           const today = new Date();
-          return item.completions.some(date => 
-            format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
-          );
-        }).length > 0 && (
-          <>
-            <Text style={{ fontWeight: "700", marginTop: 16, color: theme.textSecondary }}>Completed Today</Text>
-            <FlatList
-              data={goal.subGoals.filter(item => {
-                const today = new Date();
-                return item.completions.some(date => 
-                  format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
-                );
-              })}
+          const completedTasks = goal.subGoals.filter(item => {
+            // For custom frequency tasks, check if achieved
+            if (item.frequency === "custom") {
+              const progress = getCustomFrequencyProgress(item, today);
+              return progress.achieved;
+            }
+            
+            // For regular tasks, check if completed today
+            return item.completions.some(date => 
+              format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
+            );
+          });
+          
+          return completedTasks.length > 0 ? (
+            <>
+              <Text style={{ fontWeight: "700", marginTop: 16, color: theme.textSecondary }}>Completed</Text>
+              <FlatList
+                data={completedTasks}
               keyExtractor={(t) => t.id}
               ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
               renderItem={({ item }) => (
@@ -326,14 +347,28 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                       {item.frequency === "custom" && item.customFrequency ? (() => {
                         const progress = getCustomFrequencyProgress(item, new Date());
                         return (
-                          <>
-                            <Text style={{ color: theme.textSecondary }}>
+                          <View style={{ marginTop: 8 }}>
+                            <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 4 }}>
                               {progress.completed}/{progress.target} times this {item.customFrequency.type.slice(0, -2)}
                             </Text>
-                            <Text style={{ color: theme.success }}>
+                            {/* Segmented Progress Bar */}
+                            <View style={{ flexDirection: "row", gap: 2 }}>
+                              {Array.from({ length: progress.target }, (_, index) => (
+                                <View
+                                  key={index}
+                                  style={{
+                                    flex: 1,
+                                    height: 6,
+                                    backgroundColor: index < progress.completed ? theme.success : theme.border,
+                                    borderRadius: 3,
+                                  }}
+                                />
+                              ))}
+                            </View>
+                            <Text style={{ color: theme.success, fontSize: 11, marginTop: 2 }}>
                               {progress.achieved ? "Goal achieved! ✓" : "Progress made ✓"}
                             </Text>
-                          </>
+                          </View>
                         );
                       })() : (
                         <>
@@ -347,7 +382,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               )}
             />
           </>
-        )}
+        ) : null;
+        })()}
       </View>
     </SafeAreaView>
   );
