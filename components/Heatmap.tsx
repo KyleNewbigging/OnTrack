@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { View, ScrollView, Text } from "react-native";
 import Svg, { Rect, Circle } from "react-native-svg";
-import { addDays, format, subDays, startOfMonth, isSameMonth } from "date-fns";
+import { addDays, format, subDays, startOfMonth, isSameMonth, startOfWeek } from "date-fns";
 import { useTheme } from "../contexts/ThemeContext";
 
 interface HMProps {
@@ -13,7 +13,10 @@ export default function Heatmap({ startOffsetDays = 120, values }: HMProps) {
   const scrollViewRef = useRef<ScrollView>(null);
   const { theme, isDark } = useTheme();
   const today = new Date();
-  const start = subDays(today, startOffsetDays);
+  
+  // Calculate start date and adjust to the previous Sunday to ensure Sunday is always top row
+  const roughStart = subDays(today, startOffsetDays);
+  const start = startOfWeek(roughStart, { weekStartsOn: 0 }); // 0 = Sunday
 
   // Auto-scroll to the right (most recent days) when component mounts
   useEffect(() => {
@@ -32,9 +35,13 @@ export default function Heatmap({ startOffsetDays = 120, values }: HMProps) {
   const cols = Math.ceil(days.length / 7);
   const cell = 14;
   const gap = 2;
+  const dayLabelWidth = 20;
   const width = cols * (cell + gap) + gap;
   const height = 7 * (cell + gap) + gap;
   const monthLabelHeight = 20;
+  
+  // Day labels (S, M, T, W, T, F, S)
+  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   // Calculate month boundaries
   const monthPositions: Array<{ month: string; x: number }> = [];
@@ -66,27 +73,54 @@ export default function Heatmap({ startOffsetDays = 120, values }: HMProps) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ alignItems: "flex-start" }}
       >
-        <View>
-          {/* Month labels */}
-          <View style={{ height: monthLabelHeight, position: "relative", marginBottom: 4 }}>
-            {monthPositions.map((pos, index) => (
-              <Text
-                key={`${pos.month}-${index}`}
-                style={{
-                  position: "absolute",
-                  left: pos.x,
-                  fontSize: 10,
-                  color: theme.textSecondary,
-                  fontWeight: "500",
+        <View style={{ flexDirection: "row" }}>
+          {/* Day labels column */}
+          <View style={{ width: dayLabelWidth, marginRight: 4 }}>
+            {/* Spacer for month labels */}
+            <View style={{ height: monthLabelHeight + 4 }} />
+            {/* Day labels */}
+            {dayLabels.map((day, index) => (
+              <View 
+                key={day + index}
+                style={{ 
+                  height: cell + gap, 
+                  justifyContent: "center", 
+                  alignItems: "center",
                 }}
               >
-                {pos.month}
-              </Text>
+                <Text style={{ 
+                  fontSize: 9, 
+                  color: theme.textSecondary, 
+                  fontWeight: "500" 
+                }}>
+                  {day}
+                </Text>
+              </View>
             ))}
           </View>
           
-          {/* Heatmap grid */}
-          <Svg width={width} height={height}>
+          {/* Heatmap content */}
+          <View>
+            {/* Month labels */}
+            <View style={{ height: monthLabelHeight, position: "relative", marginBottom: 4 }}>
+              {monthPositions.map((pos, index) => (
+                <Text
+                  key={`${pos.month}-${index}`}
+                  style={{
+                    position: "absolute",
+                    left: pos.x,
+                    fontSize: 10,
+                    color: theme.textSecondary,
+                    fontWeight: "500",
+                  }}
+                >
+                  {pos.month}
+                </Text>
+              ))}
+            </View>
+            
+            {/* Heatmap grid */}
+            <Svg width={width} height={height}>
             {days.map((d, i) => {
               const col = Math.floor(i / 7);
               const row = i % 7;
@@ -118,7 +152,8 @@ export default function Heatmap({ startOffsetDays = 120, values }: HMProps) {
                 </React.Fragment>
               );
             })}
-          </Svg>
+            </Svg>
+          </View>
         </View>
       </ScrollView>
     </View>

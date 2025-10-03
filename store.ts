@@ -22,8 +22,8 @@ export const getCustomFrequencyProgress = (task: SubGoal, referenceDate: Date = 
   let periodEnd: Date;
   
   if (type === "weekly") {
-    periodStart = startOfWeek(referenceDate, { weekStartsOn: 1 }); // Monday start
-    periodEnd = endOfWeek(referenceDate, { weekStartsOn: 1 });
+    periodStart = startOfWeek(referenceDate, { weekStartsOn: 0 }); // Sunday start
+    periodEnd = endOfWeek(referenceDate, { weekStartsOn: 0 }); // Saturday end
   } else { // monthly
     periodStart = startOfMonth(referenceDate);
     periodEnd = endOfMonth(referenceDate);
@@ -55,6 +55,28 @@ export const getGoalStreak = (task: SubGoal): number => {
     // For custom frequencies, check period achievements
     const { type } = task.customFrequency;
     
+    // First check if current period is achieved
+    let currentProgress = getCustomFrequencyProgress(task, currentDate);
+    
+    // If current period is achieved, start counting from it
+    if (currentProgress.achieved) {
+      streak++;
+      // Move to previous period
+      if (type === "weekly") {
+        currentDate.setDate(currentDate.getDate() - 7);
+      } else {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+      }
+    } else {
+      // If current period is not achieved, start from previous period
+      if (type === "weekly") {
+        currentDate.setDate(currentDate.getDate() - 7);
+      } else {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+      }
+    }
+    
+    // Now count consecutive achieved periods going backwards
     while (true) {
       const progress = getCustomFrequencyProgress(task, currentDate);
       
@@ -95,8 +117,8 @@ export const getGoalStreak = (task: SubGoal): number => {
   } else if (task.frequency === "weekly") {
     // For weekly tasks, check consecutive weeks
     while (true) {
-      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+      const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 }); // Sunday
+      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 }); // Saturday
       
       const hasCompletionThisWeek = task.completions.some(date => 
         isWithinInterval(date, { start: weekStart, end: weekEnd })
@@ -286,6 +308,21 @@ function getSampleGoals(): Goal[] {
                         new Date(2025, 8, 23), new Date(2025, 8, 26),
                         new Date(2025, 8, 16), new Date(2025, 8, 19),
                         new Date(2025, 8, 9), new Date(2025, 8, 12)
+                    ]
+                },
+                {
+                    id: makeId(),
+                    title: "Clean house thoroughly",
+                    frequency: "weekly",
+                    completions: [
+                        // 7-week streak! Each completion is one per week
+                        new Date(2025, 8, 28),  // Current week (Sept 28-Oct 4) - Sunday
+                        new Date(2025, 8, 21),  // Week of Sept 21-27
+                        new Date(2025, 8, 14),  // Week of Sept 14-20
+                        new Date(2025, 8, 7),   // Week of Sept 7-13
+                        new Date(2025, 7, 31),  // Week of Aug 31-Sep 6
+                        new Date(2025, 7, 24),  // Week of Aug 24-30
+                        new Date(2025, 7, 17),  // Week of Aug 17-23
                     ]
                 }
             ]
@@ -496,6 +533,9 @@ export const useStore = create<State>()(
                 const map: Record<string, number> = {};
                 for (const g of get().goals) {
                     for (const t of g.subGoals) {
+                        // Skip "once" frequency tasks - they shouldn't appear in heatmaps
+                        if (t.frequency === "once") continue;
+                        
                         for (const completionDate of t.completions) {
                             const dateKey = dateToKey(completionDate);
                             map[dateKey] = (map[dateKey] || 0) + 1;

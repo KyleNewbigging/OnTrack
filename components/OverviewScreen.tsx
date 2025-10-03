@@ -66,49 +66,55 @@ export default function OverviewScreen({ navigation, route }: OverviewProps) {
                     </Text>
                   </View>
                   
-                  {/* Fire Streak Indicator */}
+                  {/* Fire Streak Indicator - Always Show */}
                   {(() => {
                     const streak = getGoalStreak(task);
-                    if (streak > 0) {
-                      return (
-                        <View style={{ alignItems: "center", marginLeft: 12 }}>
-                          <View style={{ position: "relative" }}>
-                            <Ionicons name="flame" size={28} color="#FF6B35" />
-                            <View style={{
-                              position: "absolute",
-                              top: -6,
-                              right: -10,
-                              backgroundColor: theme.primary,
-                              borderRadius: 12,
-                              minWidth: 24,
-                              height: 24,
-                              justifyContent: "center",
-                              alignItems: "center",
-                              paddingHorizontal: 6,
-                              borderWidth: 2,
-                              borderColor: theme.surface,
-                            }}>
-                              <Text style={{
-                                color: "white",
-                                fontSize: 11,
-                                fontWeight: "bold",
-                              }}>
-                                {streak}
-                              </Text>
-                            </View>
-                          </View>
-                          <Text style={{ 
-                            fontSize: 10, 
-                            color: theme.textSecondary, 
-                            marginTop: 2,
-                            fontWeight: "600"
+                    const hasStreak = streak > 0;
+                    
+                    return (
+                      <View style={{ alignItems: "center", marginLeft: 12 }}>
+                        <View style={{ position: "relative" }}>
+                          <Ionicons 
+                            name="flame" 
+                            size={28} 
+                            color={hasStreak ? "#FF6B35" : theme.textSecondary}
+                            style={{ opacity: hasStreak ? 1 : 0.5 }}
+                          />
+                          <View style={{
+                            position: "absolute",
+                            top: -6,
+                            right: -10,
+                            backgroundColor: hasStreak ? theme.primary : theme.textSecondary,
+                            borderRadius: 12,
+                            minWidth: 24,
+                            height: 24,
+                            justifyContent: "center",
+                            alignItems: "center",
+                            paddingHorizontal: 6,
+                            borderWidth: 2,
+                            borderColor: theme.surface,
+                            opacity: hasStreak ? 1 : 0.6,
                           }}>
-                            {streak} {streak === 1 ? 'streak' : 'streak'}
-                          </Text>
+                            <Text style={{
+                              color: "white",
+                              fontSize: 11,
+                              fontWeight: "bold",
+                            }}>
+                              {streak}
+                            </Text>
+                          </View>
                         </View>
-                      );
-                    }
-                    return null;
+                        <Text style={{ 
+                          fontSize: 10, 
+                          color: hasStreak ? theme.textSecondary : theme.textSecondary, 
+                          marginTop: 2,
+                          fontWeight: "600",
+                          opacity: hasStreak ? 1 : 0.6,
+                        }}>
+                          {streak} streak
+                        </Text>
+                      </View>
+                    );
                   })()}
                 </View>
               </View>

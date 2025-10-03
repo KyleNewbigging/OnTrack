@@ -212,10 +212,28 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               return shouldShowCustomTask(item, today);
             }
             
-            // For regular frequencies, check if completed today
-            return !item.completions.some(date => 
-              format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
-            );
+            // For daily tasks, check if completed today
+            if (item.frequency === "daily") {
+              return !item.completions.some(date => 
+                format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
+              );
+            }
+            
+            // For weekly tasks, check if completed this week
+            if (item.frequency === "weekly") {
+              const weekStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
+              const weekEnd = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
+              return !item.completions.some(date => 
+                isWithinInterval(date, { start: weekStart, end: weekEnd })
+              );
+            }
+            
+            // For "once" frequency, check if ever completed
+            if (item.frequency === "once") {
+              return item.completions.length === 0;
+            }
+            
+            return true; // Default to showing the task
           });
           
           if (pendingTasks.length === 0) {
@@ -289,12 +307,45 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                             )}
                           </View>
                         );
-                      })() : (
-                        <>
-                          <Text style={{ color: theme.textSecondary }}>Frequency: {item.frequency}</Text>
-                          <Text style={{ color: theme.textSecondary }}>Done today: No</Text>
-                        </>
-                      )}
+                      })() : (() => {
+                        // Handle other frequency types
+                        if (item.frequency === "weekly") {
+                          const today = new Date();
+                          const weekStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
+                          const weekEnd = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
+                          const completedThisWeek = item.completions.some(date => 
+                            isWithinInterval(date, { start: weekStart, end: weekEnd })
+                          );
+                          return (
+                            <>
+                              <Text style={{ color: theme.textSecondary }}>Frequency: Weekly</Text>
+                              <Text style={{ color: theme.textSecondary }}>
+                                Done this week: {completedThisWeek ? "Yes" : "No"}
+                              </Text>
+                            </>
+                          );
+                        } else if (item.frequency === "daily") {
+                          return (
+                            <>
+                              <Text style={{ color: theme.textSecondary }}>Frequency: Daily</Text>
+                              <Text style={{ color: theme.textSecondary }}>Done today: No</Text>
+                            </>
+                          );
+                        } else if (item.frequency === "once") {
+                          return (
+                            <>
+                              <Text style={{ color: theme.textSecondary }}>Frequency: Once</Text>
+                              <Text style={{ color: theme.textSecondary }}>Status: Pending</Text>
+                            </>
+                          );
+                        }
+                        return (
+                          <>
+                            <Text style={{ color: theme.textSecondary }}>Frequency: {item.frequency}</Text>
+                            <Text style={{ color: theme.textSecondary }}>Status: Pending</Text>
+                          </>
+                        );
+                      })()}
                     </View>
                   </View>
                 </Pressable>
@@ -313,10 +364,28 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               return progress.achieved;
             }
             
-            // For regular tasks, check if completed today
-            return item.completions.some(date => 
-              format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
-            );
+            // For daily tasks, check if completed today
+            if (item.frequency === "daily") {
+              return item.completions.some(date => 
+                format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
+              );
+            }
+            
+            // For weekly tasks, check if completed this week
+            if (item.frequency === "weekly") {
+              const weekStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
+              const weekEnd = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
+              return item.completions.some(date => 
+                isWithinInterval(date, { start: weekStart, end: weekEnd })
+              );
+            }
+            
+            // For "once" frequency, check if ever completed
+            if (item.frequency === "once") {
+              return item.completions.length > 0;
+            }
+            
+            return false; // Default to not completed
           });
           
           return completedTasks.length > 0 ? (
@@ -370,12 +439,37 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                             </Text>
                           </View>
                         );
-                      })() : (
-                        <>
-                          <Text style={{ color: theme.textSecondary }}>Frequency: {item.frequency}</Text>
-                          <Text style={{ color: theme.success }}>Done today: Yes ✓</Text>
-                        </>
-                      )}
+                      })() : (() => {
+                        // Handle other frequency types
+                        if (item.frequency === "weekly") {
+                          return (
+                            <>
+                              <Text style={{ color: theme.textSecondary }}>Frequency: Weekly</Text>
+                              <Text style={{ color: theme.success }}>Done this week: Yes ✓</Text>
+                            </>
+                          );
+                        } else if (item.frequency === "daily") {
+                          return (
+                            <>
+                              <Text style={{ color: theme.textSecondary }}>Frequency: Daily</Text>
+                              <Text style={{ color: theme.success }}>Done today: Yes ✓</Text>
+                            </>
+                          );
+                        } else if (item.frequency === "once") {
+                          return (
+                            <>
+                              <Text style={{ color: theme.textSecondary }}>Frequency: Once</Text>
+                              <Text style={{ color: theme.success }}>Completed ✓</Text>
+                            </>
+                          );
+                        }
+                        return (
+                          <>
+                            <Text style={{ color: theme.textSecondary }}>Frequency: {item.frequency}</Text>
+                            <Text style={{ color: theme.success }}>Completed ✓</Text>
+                          </>
+                        );
+                      })()}
                     </View>
                   </View>
                 </Pressable>
