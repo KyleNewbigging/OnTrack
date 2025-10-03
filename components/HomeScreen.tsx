@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState, useLayoutEffect } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Text, View, Pressable, ScrollView, Alert, Switch } from "react-native";
+import { Text, View, Pressable, ScrollView, Alert, Switch, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from "expo-haptics";
 import { useStore, debugAsyncStorage, getCurrentMode } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
@@ -20,60 +21,38 @@ export default function HomeScreen({ navigation }: HomeProps) {
   const goals = useStore((s) => s.goals);
   const currentMode = getCurrentMode();
   const { theme, isDark, toggleTheme } = useTheme();
+  const [settingsVisible, setSettingsVisible] = useState(false);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setSettingsVisible(true);
+          }}
+          style={{ padding: 8 }}
+        >
+          <Ionicons name="settings-outline" size={20} color={theme.text} />
+        </Pressable>
+      ),
+    });
+  }, [navigation, theme.text]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
       <ScrollView style={{ flex: 1, backgroundColor: theme.background }} showsVerticalScrollIndicator={false}>
         <View style={{ padding: 16, gap: 12 }}>
           
-          {/* Theme Toggle and Store Mode */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={{ color: theme.textSecondary, fontWeight: "600" }}>Dark Mode</Text>
-              <Switch
-                value={isDark}
-                onValueChange={async () => {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  toggleTheme();
-                }}
-                trackColor={{ false: theme.border, true: theme.primary }}
-                thumbColor={isDark ? theme.background : theme.surface}
-              />
-            </View>
-            <Text style={{ 
-              fontSize: 10, 
-              color: currentMode === 'DEV' ? theme.warning : theme.textSecondary, 
-              opacity: 0.6, 
-              fontFamily: 'monospace',
-              letterSpacing: 0.5
-            }}>
-              {currentMode === 'DEV' ? '● DEV STORE' : '● PROD STORE'}
-            </Text>
-          </View>
-          
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <Pressable
-              onPress={async () => {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                navigation.navigate("NewGoal");
-              }}
-              style={{ backgroundColor: theme.primary, padding: 12, borderRadius: 10, flex: 1 }}
-            >
-              <Text style={{ color: "white", fontWeight: "600", textAlign: "center" }}>+ New Goal</Text>
-            </Pressable>
-            
-            <Pressable
-              onPress={async () => {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                debugAsyncStorage();
-              }}
-              style={{ backgroundColor: theme.danger, padding: 12, borderRadius: 10 }}
-            >
-              <Text style={{ color: "white", fontWeight: "600", textAlign: "center" }}>Debug</Text>
-            </Pressable>
-            
-
-          </View>
+          <Pressable
+            onPress={async () => {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate("NewGoal");
+            }}
+            style={{ backgroundColor: theme.primary, padding: 12, borderRadius: 10 }}
+          >
+            <Text style={{ color: "white", fontWeight: "600", textAlign: "center" }}>+ New Goal</Text>
+          </Pressable>
 
           <Text style={{ fontSize: 18, fontWeight: "700", color: theme.text }}>Consistency Overview</Text>
           <RadarChart goals={goals} size={250} />
@@ -108,6 +87,95 @@ export default function HomeScreen({ navigation }: HomeProps) {
           <View style={{ height: 20 }} />
         </View>
       </ScrollView>
+
+      {/* Settings Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={settingsVisible}
+        onRequestClose={() => setSettingsVisible(false)}
+      >
+        <View style={{ 
+          flex: 1, 
+          justifyContent: 'flex-end',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)' 
+        }}>
+          <View style={{ 
+            backgroundColor: theme.surface,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            padding: 20,
+            paddingBottom: 40,
+            borderTopWidth: 1,
+            borderTopColor: theme.border
+          }}>
+            {/* Modal Header */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: theme.text }}>Settings</Text>
+              <Pressable
+                onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setSettingsVisible(false);
+                }}
+                style={{ 
+                  padding: 8, 
+                  borderRadius: 8,
+                  backgroundColor: theme.background
+                }}
+              >
+                <Ionicons name="close" size={20} color={theme.textSecondary} />
+              </Pressable>
+            </View>
+
+            {/* Dark Mode Toggle */}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <Text style={{ color: theme.text, fontWeight: "600", fontSize: 16 }}>Dark Mode</Text>
+              <Switch
+                value={isDark}
+                onValueChange={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  toggleTheme();
+                }}
+                trackColor={{ false: theme.border, true: theme.primary }}
+                thumbColor={isDark ? theme.surface : theme.background}
+              />
+            </View>
+
+            {/* Store Mode Indicator */}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <Text style={{ color: theme.text, fontWeight: "600", fontSize: 16 }}>Store Mode</Text>
+              <Text style={{ 
+                fontSize: 12, 
+                color: currentMode === 'DEV' ? theme.warning : theme.textSecondary, 
+                fontFamily: 'monospace',
+                letterSpacing: 0.5,
+                backgroundColor: theme.background,
+                padding: 6,
+                borderRadius: 6
+              }}>
+                {currentMode === 'DEV' ? '● DEV STORE' : '● PROD STORE'}
+              </Text>
+            </View>
+
+            {/* Debug Button */}
+            <Pressable
+              onPress={async () => {
+                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                debugAsyncStorage();
+                setSettingsVisible(false);
+              }}
+              style={{ 
+                backgroundColor: theme.danger, 
+                padding: 12, 
+                borderRadius: 10,
+                alignItems: 'center'
+              }}
+            >
+              <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Debug Storage</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
