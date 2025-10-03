@@ -3,9 +3,10 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, TextInput, FlatList, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { useStore } from "../store";
+import { useStore, getCustomFrequencyProgress, shouldShowCustomTask } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import { format, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
+import { Frequency, CustomFrequency } from "../types";
 
 type RootStackParamList = {
   Home: undefined;
@@ -25,7 +26,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const { theme } = useTheme();
 
   const [subTitle, setSubTitle] = React.useState("");
-  const [frequency, setFrequency] = React.useState<"once" | "daily" | "weekly">("daily");
+  const [frequency, setFrequency] = React.useState<Frequency>("daily");
+  const [customFrequency, setCustomFrequency] = React.useState<CustomFrequency>({ type: "weekly", target: 3 });
   const [isEditing, setIsEditing] = React.useState(false);
 
   if (!goal) return <Text>Not found</Text>;
@@ -77,13 +79,13 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 8, padding: 8, backgroundColor: theme.background, color: theme.text }}
             placeholderTextColor={theme.textSecondary}
           />
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            {["once", "daily", "weekly"].map((f) => (
+          <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+            {(["once", "daily", "weekly", "custom"] as Frequency[]).map((f) => (
               <Pressable
                 key={f}
                 onPress={async () => {
                   await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setFrequency(f as any);
+                  setFrequency(f);
                 }}
                 style={{
                   paddingHorizontal: 10,
@@ -98,11 +100,69 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               </Pressable>
             ))}
           </View>
+
+          {/* Custom Frequency Controls */}
+          {frequency === "custom" && (
+            <View style={{ gap: 8 }}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <TextInput
+                  placeholder="3"
+                  value={customFrequency.target.toString()}
+                  onChangeText={(text) => {
+                    const num = parseInt(text) || 1;
+                    setCustomFrequency(prev => ({ ...prev, target: Math.max(1, num) }));
+                  }}
+                  keyboardType="numeric"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    borderRadius: 8,
+                    padding: 8,
+                    backgroundColor: theme.background,
+                    color: theme.text,
+                    width: 60,
+                    textAlign: "center"
+                  }}
+                  placeholderTextColor={theme.textSecondary}
+                />
+                <Text style={{ color: theme.text, alignSelf: "center" }}>times per</Text>
+              </View>
+              
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {(["weekly", "monthly"] as const).map((type) => (
+                  <Pressable
+                    key={type}
+                    onPress={async () => {
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setCustomFrequency(prev => ({ ...prev, type }));
+                    }}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: customFrequency.type === type ? theme.primary : theme.border,
+                      backgroundColor: customFrequency.type === type ? theme.primary + "20" : "transparent",
+                    }}
+                  >
+                    <Text style={{ fontWeight: "600", color: customFrequency.type === type ? theme.primary : theme.text }}>
+                      {type}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
           <Pressable
             onPress={async () => {
               if (subTitle.trim()) {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                addSubGoal(goalId, subTitle.trim(), frequency);
+                addSubGoal(
+                  goalId, 
+                  subTitle.trim(), 
+                  frequency,
+                  frequency === "custom" ? customFrequency : undefined
+                );
                 setSubTitle("");
               }
             }}
@@ -146,11 +206,17 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         <Text style={{ fontWeight: "700", marginTop: 4, color: theme.text }}>Tasks</Text>
         {(() => {
           const today = new Date();
-          const pendingTasks = goal.subGoals.filter(item => 
-            !item.completions.some(date => 
+          const pendingTasks = goal.subGoals.filter(item => {
+            // For custom frequency, check if target is achieved this period
+            if (item.frequency === "custom") {
+              return shouldShowCustomTask(item, today);
+            }
+            
+            // For regular frequencies, check if completed today
+            return !item.completions.some(date => 
               format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
-            )
-          );
+            );
+          });
           
           if (pendingTasks.length === 0) {
             return (
@@ -192,9 +258,29 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                     backgroundColor: theme.surface,
                   }}
                 >
-                  <Text style={{ fontWeight: "700", color: theme.text }}>{item.title}</Text>
-                  <Text style={{ color: theme.textSecondary }}>Frequency: {item.frequency}</Text>
-                  <Text style={{ color: theme.textSecondary }}>Done today: No</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontWeight: "700", color: theme.text }}>{item.title}</Text>
+                      {item.frequency === "custom" && item.customFrequency ? (() => {
+                        const progress = getCustomFrequencyProgress(item, new Date());
+                        return (
+                          <>
+                            <Text style={{ color: theme.textSecondary }}>
+                              {progress.completed}/{progress.target} times this {item.customFrequency.type.slice(0, -2)}
+                            </Text>
+                            <Text style={{ color: theme.textSecondary }}>
+                              {progress.target - progress.completed} more to go
+                            </Text>
+                          </>
+                        );
+                      })() : (
+                        <>
+                          <Text style={{ color: theme.textSecondary }}>Frequency: {item.frequency}</Text>
+                          <Text style={{ color: theme.textSecondary }}>Done today: No</Text>
+                        </>
+                      )}
+                    </View>
+                  </View>
                 </Pressable>
               )}
             />
@@ -234,9 +320,29 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                     opacity: 0.7,
                   }}
                 >
-                  <Text style={{ fontWeight: "700", color: theme.textSecondary, textDecorationLine: "line-through" }}>{item.title}</Text>
-                  <Text style={{ color: theme.textSecondary }}>Frequency: {item.frequency}</Text>
-                  <Text style={{ color: theme.success }}>Done today: Yes ✓</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontWeight: "700", color: theme.textSecondary, textDecorationLine: "line-through" }}>{item.title}</Text>
+                      {item.frequency === "custom" && item.customFrequency ? (() => {
+                        const progress = getCustomFrequencyProgress(item, new Date());
+                        return (
+                          <>
+                            <Text style={{ color: theme.textSecondary }}>
+                              {progress.completed}/{progress.target} times this {item.customFrequency.type.slice(0, -2)}
+                            </Text>
+                            <Text style={{ color: theme.success }}>
+                              {progress.achieved ? "Goal achieved! ✓" : "Progress made ✓"}
+                            </Text>
+                          </>
+                        );
+                      })() : (
+                        <>
+                          <Text style={{ color: theme.textSecondary }}>Frequency: {item.frequency}</Text>
+                          <Text style={{ color: theme.success }}>Done today: Yes ✓</Text>
+                        </>
+                      )}
+                    </View>
+                  </View>
                 </Pressable>
               )}
             />

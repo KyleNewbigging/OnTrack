@@ -1,14 +1,166 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { Goal, Frequency } from "./types";
-import { format, startOfDay } from "date-fns";
+import { Goal, Frequency, CustomFrequency, SubGoal } from "./types";
+import { format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 
 // Date utility functions
 const normalizeDate = (date: Date): Date => startOfDay(date);
 const dateToKey = (date: Date): string => format(normalizeDate(date), "yyyy-MM-dd");
 const isSameDay = (date1: Date, date2: Date): boolean => 
   dateToKey(date1) === dateToKey(date2);
+
+// Helper functions for custom frequency calculations
+export const getCustomFrequencyProgress = (task: SubGoal, referenceDate: Date = new Date()) => {
+  if (task.frequency !== "custom" || !task.customFrequency) {
+    return { completed: 0, target: 0, achieved: false };
+  }
+
+  const { type, target } = task.customFrequency;
+  
+  let periodStart: Date;
+  let periodEnd: Date;
+  
+  if (type === "weekly") {
+    periodStart = startOfWeek(referenceDate, { weekStartsOn: 1 }); // Monday start
+    periodEnd = endOfWeek(referenceDate, { weekStartsOn: 1 });
+  } else { // monthly
+    periodStart = startOfMonth(referenceDate);
+    periodEnd = endOfMonth(referenceDate);
+  }
+  
+  const completionsInPeriod = task.completions.filter(date =>
+    isWithinInterval(date, { start: periodStart, end: periodEnd })
+  );
+  
+  const completed = completionsInPeriod.length;
+  const achieved = completed >= target;
+  
+  return { completed, target, achieved, periodStart, periodEnd };
+};
+
+export const shouldShowCustomTask = (task: SubGoal, referenceDate: Date = new Date()): boolean => {
+  if (task.frequency !== "custom") return true;
+  
+  const { achieved } = getCustomFrequencyProgress(task, referenceDate);
+  return !achieved; // Show task if target not yet achieved this period
+};
+
+// Helper to calculate streak for any goal type
+export const getGoalStreak = (task: SubGoal): number => {
+  let streak = 0;
+  let currentDate = new Date();
+  
+  if (task.frequency === "custom" && task.customFrequency) {
+    // For custom frequencies, check period achievements
+    const { type } = task.customFrequency;
+    
+    while (true) {
+      const progress = getCustomFrequencyProgress(task, currentDate);
+      
+      if (progress.achieved) {
+        streak++;
+        // Move to previous period
+        if (type === "weekly") {
+          currentDate.setDate(currentDate.getDate() - 7);
+        } else {
+          currentDate.setMonth(currentDate.getMonth() - 1);
+        }
+      } else {
+        break; // Streak broken
+      }
+      
+      // Safety check - don't go back more than 2 years
+      if (streak > 104) break;
+    }
+  } else if (task.frequency === "daily") {
+    // For daily tasks, check consecutive days
+    while (true) {
+      const dateStr = format(currentDate, "yyyy-MM-dd");
+      const hasCompletion = task.completions.some(date => 
+        format(date, "yyyy-MM-dd") === dateStr
+      );
+      
+      if (hasCompletion) {
+        streak++;
+        // Move to previous day
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else {
+        break; // Streak broken
+      }
+      
+      // Safety check - don't go back more than 365 days
+      if (streak > 365) break;
+    }
+  } else if (task.frequency === "weekly") {
+    // For weekly tasks, check consecutive weeks
+    while (true) {
+      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+      
+      const hasCompletionThisWeek = task.completions.some(date => 
+        isWithinInterval(date, { start: weekStart, end: weekEnd })
+      );
+      
+      if (hasCompletionThisWeek) {
+        streak++;
+        // Move to previous week
+        currentDate.setDate(currentDate.getDate() - 7);
+      } else {
+        break; // Streak broken
+      }
+      
+      // Safety check - don't go back more than 104 weeks (2 years)
+      if (streak > 104) break;
+    }
+  }
+  
+  return streak;
+};
+
+// Helper to get all achieved goal periods for heatmap indicators
+export const getAchievedGoalPeriods = (task: SubGoal): Array<{ start: Date; end: Date; type: "weekly" | "monthly" }> => {
+  if (task.frequency !== "custom" || !task.customFrequency) return [];
+  
+  const achievements: Array<{ start: Date; end: Date; type: "weekly" | "monthly" }> = [];
+  const { type, target } = task.customFrequency;
+  
+  // Get date range to check (last 6 months for performance)
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setMonth(startDate.getMonth() - 6);
+  
+  // Check each period in the range
+  let currentDate = new Date(startDate);
+  
+  while (currentDate <= endDate) {
+    const progress = getCustomFrequencyProgress(task, currentDate);
+    
+    if (progress.achieved && progress.periodStart && progress.periodEnd) {
+      // Check if we already added this period
+      const alreadyAdded = achievements.some(a => 
+        a.start.getTime() === progress.periodStart!.getTime()
+      );
+      
+      if (!alreadyAdded) {
+        achievements.push({
+          start: progress.periodStart,
+          end: progress.periodEnd,
+          type
+        });
+      }
+    }
+    
+    // Move to next period
+    if (type === "weekly") {
+      currentDate.setDate(currentDate.getDate() + 7);
+    } else {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+  }
+  
+  return achievements;
+};
 
 
 // Debug function to inspect all stored data - console only for now
@@ -84,13 +236,13 @@ function getSampleGoals(): Goal[] {
                     title: "Morning workout",
                     frequency: "daily",
                     completions: [
-                        new Date(2025, 6, 1), new Date(2025, 6, 3), new Date(2025, 6, 5), new Date(2025, 6, 8), new Date(2025, 6, 10),
-                        new Date(2025, 6, 12), new Date(2025, 6, 15), new Date(2025, 6, 17), new Date(2025, 6, 20), new Date(2025, 6, 22),
-                        new Date(2025, 7, 1), new Date(2025, 7, 3), new Date(2025, 7, 6), new Date(2025, 7, 8), new Date(2025, 7, 11),
-                        new Date(2025, 7, 13), new Date(2025, 7, 16), new Date(2025, 7, 18), new Date(2025, 7, 21), new Date(2025, 7, 23),
-                        new Date(2025, 8, 2), new Date(2025, 8, 4), new Date(2025, 8, 7), new Date(2025, 8, 9), new Date(2025, 8, 12),
-                        new Date(2025, 8, 14), new Date(2025, 8, 17), new Date(2025, 8, 19), new Date(2025, 8, 22), new Date(2025, 8, 24),
-                        new Date(2025, 8, 30)
+                        // 7-day streak ending today (Sept 26-Oct 2, 2025)
+                        new Date(2025, 8, 26), new Date(2025, 8, 27), new Date(2025, 8, 28), 
+                        new Date(2025, 8, 29), new Date(2025, 8, 30), new Date(2025, 9, 1), new Date(2025, 9, 2),
+                        // Some earlier scattered completions
+                        new Date(2025, 8, 20), new Date(2025, 8, 22), new Date(2025, 8, 24),
+                        new Date(2025, 8, 15), new Date(2025, 8, 17), new Date(2025, 8, 19),
+                        new Date(2025, 8, 10), new Date(2025, 8, 12), new Date(2025, 8, 14)
                     ]
                 },
                 {
@@ -102,6 +254,38 @@ function getSampleGoals(): Goal[] {
                         new Date(2025, 7, 2), new Date(2025, 7, 5), new Date(2025, 7, 7), new Date(2025, 7, 10), new Date(2025, 7, 12),
                         new Date(2025, 7, 15), new Date(2025, 7, 17), new Date(2025, 7, 20), new Date(2025, 7, 22), new Date(2025, 7, 25),
                         new Date(2025, 8, 3), new Date(2025, 8, 5), new Date(2025, 8, 8), new Date(2025, 8, 10), new Date(2025, 8, 13)
+                    ]
+                },
+                {
+                    id: makeId(),
+                    title: "Go to gym",
+                    frequency: "custom",
+                    customFrequency: { type: "weekly", target: 3 },
+                    completions: [
+                        // Current week (Sept 30-Oct 6): 2/3 so far
+                        new Date(2025, 8, 30), new Date(2025, 9, 2),
+                        // Week 4 (Sept 23-29): 3/3 ✓
+                        new Date(2025, 8, 23), new Date(2025, 8, 25), new Date(2025, 8, 27),
+                        // Week 3 (Sept 16-22): 3/3 ✓
+                        new Date(2025, 8, 16), new Date(2025, 8, 18), new Date(2025, 8, 20),
+                        // Week 2 (Sept 9-15): 3/3 ✓
+                        new Date(2025, 8, 9), new Date(2025, 8, 11), new Date(2025, 8, 13),
+                        // Week 1 (Sept 2-8): 3/3 ✓ - This creates a 4-week streak!
+                        new Date(2025, 8, 2), new Date(2025, 8, 4), new Date(2025, 8, 6)
+                    ]
+                },
+                {
+                    id: makeId(),
+                    title: "Meal prep",
+                    frequency: "custom",
+                    customFrequency: { type: "weekly", target: 2 },
+                    completions: [
+                        // Current week: 1/2 so far
+                        new Date(2025, 9, 1),
+                        // 3-week streak of hitting 2/week
+                        new Date(2025, 8, 23), new Date(2025, 8, 26),
+                        new Date(2025, 8, 16), new Date(2025, 8, 19),
+                        new Date(2025, 8, 9), new Date(2025, 8, 12)
                     ]
                 }
             ]
@@ -140,9 +324,11 @@ function getSampleGoals(): Goal[] {
                     title: "Watch Spanish Netflix",
                     frequency: "weekly",
                     completions: [
-                        new Date("2025-07-20"), new Date("2025-07-27"), new Date("2025-08-03"), new Date("2025-08-10"), new Date("2025-08-17"), 
-                        new Date("2025-08-24"), new Date("2025-08-31"), new Date("2025-09-07"), new Date("2025-09-14"), new Date("2025-09-21"), 
-                        new Date("2025-09-28")
+                        // 12-week streak! (July to current)
+                        new Date("2025-07-13"), new Date("2025-07-20"), new Date("2025-07-27"), 
+                        new Date("2025-08-03"), new Date("2025-08-10"), new Date("2025-08-17"), 
+                        new Date("2025-08-24"), new Date("2025-08-31"), new Date("2025-09-07"), 
+                        new Date("2025-09-14"), new Date("2025-09-21"), new Date("2025-09-28")
                     ]
                 }
             ]
@@ -190,10 +376,12 @@ function getSampleGoals(): Goal[] {
                     title: "Code for 2 hours",
                     frequency: "daily",
                     completions: [
-                        new Date("2025-08-15"), new Date("2025-08-16"), new Date("2025-08-18"), new Date("2025-08-19"), new Date("2025-08-21"),
-                        new Date("2025-08-22"), new Date("2025-08-24"), new Date("2025-08-25"), new Date("2025-08-27"), new Date("2025-08-28"),
-                        new Date("2025-09-02"), new Date("2025-09-03"), new Date("2025-09-05"), new Date("2025-09-06"), new Date("2025-09-09"),
-                        new Date("2025-09-10"), new Date("2025-09-12"), new Date("2025-09-13"), new Date("2025-09-16"), new Date("2025-09-17")
+                        // 3-day streak ending today
+                        new Date(2025, 8, 30), new Date(2025, 9, 1), new Date(2025, 9, 2),
+                        // Some scattered earlier dates
+                        new Date("2025-09-25"), new Date("2025-09-26"), new Date("2025-09-28"),
+                        new Date("2025-09-20"), new Date("2025-09-22"),
+                        new Date("2025-09-15"), new Date("2025-09-17")
                     ]
                 },
                 {
@@ -236,7 +424,7 @@ export const getCurrentMode = () => CURRENT_MODE;
 interface State {
     goals: Goal[];
     addGoal: (title: string, target?: string) => void;
-    addSubGoal: (goalId: string, title: string, frequency: Frequency) => void;
+    addSubGoal: (goalId: string, title: string, frequency: Frequency, customFrequency?: CustomFrequency) => void;
     toggleTaskCompletion: (goalId: string, subId: string, date?: Date) => void;
     completionsByDate: () => Record<string, number>;
     deleteGoal: (goalId: string) => void;
@@ -260,7 +448,7 @@ export const useStore = create<State>()(
                         { id: makeId(), title, target, subGoals: [], createdAt: Date.now() },
                     ],
                 })),
-            addSubGoal: (goalId, title, frequency) =>
+            addSubGoal: (goalId, title, frequency, customFrequency) =>
                 set((s) => ({
                     goals: s.goals.map((g) =>
                         g.id === goalId
@@ -268,7 +456,13 @@ export const useStore = create<State>()(
                                 ...g,
                                 subGoals: [
                                     ...g.subGoals,
-                                    { id: makeId(), title, frequency, completions: [] },
+                                    { 
+                                        id: makeId(), 
+                                        title, 
+                                        frequency, 
+                                        customFrequency: frequency === "custom" ? customFrequency : undefined,
+                                        completions: [] 
+                                    },
                                 ],
                             }
                             : g
