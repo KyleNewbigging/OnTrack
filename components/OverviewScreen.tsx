@@ -3,7 +3,8 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useStore, getGoalStreak } from "../store";
+import Svg, { Circle } from "react-native-svg";
+import { useStore, getCustomFrequencyProgress, getGoalStreak } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import Heatmap from "./Heatmap";
 import { format } from "date-fns";
@@ -18,6 +19,11 @@ type RootStackParamList = {
 type OverviewProps = NativeStackScreenProps<RootStackParamList, "Consistency">;
 
 export default function OverviewScreen({ navigation, route }: OverviewProps) {
+  const streakBadgeSize = 24;
+  const streakRingSize = 32;
+  const streakRingStrokeWidth = 3;
+  const streakRingRadius = (streakRingSize - streakRingStrokeWidth) / 2;
+  const streakRingCircumference = 2 * Math.PI * streakRingRadius;
   const { goalId } = route.params;
   const goal = useStore((s) => s.goals.find((g) => g.id === goalId)!);
   const { theme } = useTheme();
@@ -70,6 +76,13 @@ export default function OverviewScreen({ navigation, route }: OverviewProps) {
                   {(() => {
                     const streak = getGoalStreak(task);
                     const hasStreak = streak > 0;
+                    const customProgress = task.frequency === "custom" && task.customFrequency
+                      ? getCustomFrequencyProgress(task, new Date())
+                      : null;
+                    const progressRatio = customProgress
+                      ? Math.min(customProgress.completed / customProgress.target, 1)
+                      : 0;
+                    const progressOffset = streakRingCircumference * (1 - progressRatio);
                     
                     return (
                       <View style={{ alignItems: "center", marginLeft: 12 }}>
@@ -82,26 +95,62 @@ export default function OverviewScreen({ navigation, route }: OverviewProps) {
                           />
                           <View style={{
                             position: "absolute",
-                            top: -6,
-                            right: -10,
-                            backgroundColor: hasStreak ? theme.primary : theme.textSecondary,
-                            borderRadius: 12,
-                            minWidth: 24,
-                            height: 24,
+                            top: -10,
+                            right: -14,
+                            width: streakRingSize,
+                            height: streakRingSize,
                             justifyContent: "center",
                             alignItems: "center",
-                            paddingHorizontal: 6,
-                            borderWidth: 2,
-                            borderColor: theme.surface,
-                            opacity: hasStreak ? 1 : 0.6,
                           }}>
-                            <Text style={{
-                              color: "white",
-                              fontSize: 11,
-                              fontWeight: "bold",
+                            {customProgress ? (
+                              <Svg
+                                width={streakRingSize}
+                                height={streakRingSize}
+                                style={{ position: "absolute" }}
+                              >
+                                <Circle
+                                  cx={streakRingSize / 2}
+                                  cy={streakRingSize / 2}
+                                  r={streakRingRadius}
+                                  stroke={theme.border}
+                                  strokeWidth={streakRingStrokeWidth}
+                                  fill="none"
+                                  opacity={0.45}
+                                />
+                                <Circle
+                                  cx={streakRingSize / 2}
+                                  cy={streakRingSize / 2}
+                                  r={streakRingRadius}
+                                  stroke="#FF8A3D"
+                                  strokeWidth={streakRingStrokeWidth}
+                                  fill="none"
+                                  strokeDasharray={`${streakRingCircumference} ${streakRingCircumference}`}
+                                  strokeDashoffset={progressOffset}
+                                  strokeLinecap="round"
+                                  transform={`rotate(-90 ${streakRingSize / 2} ${streakRingSize / 2})`}
+                                />
+                              </Svg>
+                            ) : null}
+                            <View style={{
+                              backgroundColor: hasStreak ? theme.primary : theme.textSecondary,
+                              borderRadius: streakBadgeSize / 2,
+                              minWidth: streakBadgeSize,
+                              height: streakBadgeSize,
+                              justifyContent: "center",
+                              alignItems: "center",
+                              paddingHorizontal: 6,
+                              borderWidth: 2,
+                              borderColor: theme.surface,
+                              opacity: hasStreak ? 1 : 0.6,
                             }}>
-                              {streak}
-                            </Text>
+                              <Text style={{
+                                color: "white",
+                                fontSize: 11,
+                                fontWeight: "bold",
+                              }}>
+                                {streak}
+                              </Text>
+                            </View>
                           </View>
                         </View>
                         <Text style={{ 
