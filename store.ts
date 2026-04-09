@@ -448,8 +448,8 @@ const STORAGE_KEYS = {
     PROD: "ontrack-store-prod"
 } as const;
 
-// Configuration: Change this to switch between dev and prod modes
-const CURRENT_MODE = 'DEV' as 'DEV' | 'PROD'; // Change to 'DEV' for sample data
+// Keep the app on the production store so local development does not reseed demo content.
+const CURRENT_MODE = 'PROD' as 'DEV' | 'PROD';
 const ACTIVE_STORAGE_KEY = CURRENT_MODE === 'DEV' ? STORAGE_KEYS.DEV : STORAGE_KEYS.PROD;
 
 // Export current mode for UI indicator
@@ -465,6 +465,7 @@ interface State {
     toggleTaskCompletion: (goalId: string, subId: string, date?: Date) => void;
     completionsByDate: () => Record<string, number>;
     deleteGoal: (goalId: string) => void;
+    resetAppData: () => void;
 }
 
 // Get initial goals based on store mode
@@ -548,6 +549,11 @@ export const useStore = create<State>()(
                 set((s) => ({
                     goals: s.goals.filter((g) => g.id !== goalId),
                 }));
+            },
+            resetAppData: () => {
+                set({
+                    goals: getInitialGoals(),
+                });
             },
         }),
         {

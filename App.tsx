@@ -2,21 +2,20 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
-import { Pressable } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from "expo-haptics";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import HomeScreen from "./components/HomeScreen";
 import GoalScreen from "./components/GoalScreen";
 import NewGoalScreen from "./components/NewGoalScreen";
 import OverviewScreen from "./components/OverviewScreen";
+import PrivacyScreen from "./components/PrivacyScreen";
 
 type RootStackParamList = {
   Home: undefined;
   Goal: { goalId: string };
   NewGoal: undefined;
   Consistency: { goalId: string };
+  Privacy: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -41,6 +40,7 @@ function ThemedNavigation() {
         <Stack.Screen name="Goal" component={GoalScreen} options={{ title: "Goal" }} />
         <Stack.Screen name="NewGoal" component={NewGoalScreen} options={{ title: "New Goal" }} />
         <Stack.Screen name="Consistency" component={OverviewScreen} options={{ title: "Consistency" }} />
+        <Stack.Screen name="Privacy" component={PrivacyScreen} options={{ title: "Privacy & Data" }} />
       </Stack.Navigator>
       <StatusBar style={isDark ? "light" : "dark"} />
     </NavigationContainer>

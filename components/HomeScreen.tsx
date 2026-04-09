@@ -2,7 +2,6 @@ import React, { useState, useLayoutEffect } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, ScrollView, Alert, Switch, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from "expo-haptics";
 import { useStore, debugAsyncStorage, getCurrentMode } from "../store";
@@ -14,15 +13,18 @@ type RootStackParamList = {
   Goal: { goalId: string };
   NewGoal: undefined;
   Consistency: { goalId: string };
+  Privacy: undefined;
 };
 
 type HomeProps = NativeStackScreenProps<RootStackParamList, "Home">;
 
 export default function HomeScreen({ navigation }: HomeProps) {
   const goals = useStore((s) => s.goals);
+  const resetAppData = useStore((s) => s.resetAppData);
   const currentMode = getCurrentMode();
-  const { theme, isDark, toggleTheme } = useTheme();
+  const { theme, isDark, toggleTheme, resetThemePreference } = useTheme();
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const isDevToolsVisible = currentMode === "DEV";
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -142,75 +144,90 @@ export default function HomeScreen({ navigation }: HomeProps) {
               />
             </View>
 
-            {/* Store Mode Indicator */}
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <Text style={{ color: theme.text, fontWeight: "600", fontSize: 16 }}>Store Mode</Text>
-              <Text style={{ 
-                fontSize: 12, 
-                color: currentMode === 'DEV' ? theme.warning : theme.textSecondary, 
-                fontFamily: 'monospace',
-                letterSpacing: 0.5,
-                backgroundColor: theme.background,
-                padding: 6,
-                borderRadius: 6
-              }}>
-                {currentMode === 'DEV' ? '● DEV STORE' : '● PROD STORE'}
-              </Text>
-            </View>
-
-            {/* Debug Button */}
             <Pressable
               onPress={async () => {
                 await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                debugAsyncStorage();
                 setSettingsVisible(false);
+                navigation.navigate("Privacy");
               }}
-              style={{ 
-                backgroundColor: theme.danger, 
-                padding: 12, 
+              style={{
+                backgroundColor: theme.background,
+                padding: 12,
                 borderRadius: 10,
-                alignItems: 'center',
-                marginBottom: 12
+                marginBottom: 20,
+                borderWidth: 1,
+                borderColor: theme.border
               }}
             >
-              <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Debug Storage</Text>
+              <Text style={{ color: theme.text, fontWeight: "600", fontSize: 16 }}>Privacy & Data</Text>
+              <Text style={{ color: theme.textSecondary, marginTop: 4 }}>
+                Goals and completion history stay on this device.
+              </Text>
             </Pressable>
+
+            {isDevToolsVisible && (
+              <>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <Text style={{ color: theme.text, fontWeight: "600", fontSize: 16 }}>Store Mode</Text>
+                  <Text style={{ 
+                    fontSize: 12, 
+                    color: theme.warning, 
+                    fontFamily: 'monospace',
+                    letterSpacing: 0.5,
+                    backgroundColor: theme.background,
+                    padding: 6,
+                    borderRadius: 6
+                  }}>
+                    ● DEV STORE
+                  </Text>
+                </View>
+
+                <Pressable
+                  onPress={async () => {
+                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    debugAsyncStorage();
+                    setSettingsVisible(false);
+                  }}
+                  style={{ 
+                    backgroundColor: theme.danger, 
+                    padding: 12, 
+                    borderRadius: 10,
+                    alignItems: 'center',
+                    marginBottom: 12
+                  }}
+                >
+                  <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Debug Storage</Text>
+                </Pressable>
+              </>
+            )}
 
             {/* Clear Stores Button */}
             <Pressable
               onPress={async () => {
                 Alert.alert(
-                  "Clear All Data?",
-                  "This will permanently delete all goals, tasks, and completions. This action cannot be undone.",
+                  "Reset app data?",
+                  "This will permanently delete all goals, tasks, and completion history stored on this device.",
                   [
                     { text: "Cancel", style: "cancel" },
                     {
-                      text: "Clear All", 
+                      text: "Reset", 
                       style: "destructive", 
                       onPress: async () => {
                         try {
                           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                          
-                          // Get all keys and clear OnTrack related storage
-                          const allKeys = await AsyncStorage.getAllKeys();
-                          const onTrackKeys = allKeys.filter(key => 
-                            key.startsWith('ontrack') || key === 'theme'
-                          );
-                          
-                          if (onTrackKeys.length > 0) {
-                            await AsyncStorage.multiRemove(onTrackKeys);
-                          }
-                          
+
+                          resetAppData();
+                          await resetThemePreference();
                           setSettingsVisible(false);
-                          
+
                           Alert.alert(
-                            "Data Cleared",
-                            "All data has been cleared. Please restart the app to see fresh data.",
+                            "App data reset",
+                            "Your local data has been removed.",
                             [{ text: "OK" }]
                           );
                         } catch (error) {
-                          console.error('Error clearing storage:', error);
-                          Alert.alert("Error", "Failed to clear data. Please try again.");
+                          console.error('Error resetting storage:', error);
+                          Alert.alert("Error", "Failed to reset app data. Please try again.");
                         }
                       }
                     }
@@ -224,7 +241,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
                 alignItems: 'center'
               }}
             >
-              <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Clear All Data</Text>
+              <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>Reset App Data</Text>
             </Pressable>
           </View>
         </View>

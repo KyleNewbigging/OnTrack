@@ -53,6 +53,7 @@ interface ThemeContextType {
   theme: ThemeColors;
   isDark: boolean;
   toggleTheme: () => void;
+  resetThemePreference: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -85,10 +86,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const resetThemePreference = async () => {
+    setIsDark(false);
+    try {
+      await AsyncStorage.removeItem('theme');
+    } catch (error) {
+      console.log('Error resetting theme:', error);
+    }
+  };
+
   const theme = isDark ? darkTheme : lightTheme;
 
   return (
-    <ThemeContext.Provider value={{ theme, isDark, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, isDark, toggleTheme, resetThemePreference }}>
       {children}
     </ThemeContext.Provider>
   );
