@@ -2,9 +2,9 @@ import React from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
 import { useStore } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
+import { haptics } from "../utils/haptics";
 
 type RootStackParamList = {
   Home: undefined;
@@ -59,12 +59,15 @@ export default function NewGoalScreen({ navigation }: NewGoalProps) {
         />
 
         <Pressable
-          onPress={async () => {
+          onPress={() => {
             if (title.trim()) {
-              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              void haptics.success();
               addGoal(title.trim(), target.trim() || undefined);
               navigation.goBack();
+              return;
             }
+
+            void haptics.error();
           }}
           style={{ backgroundColor: theme.primary, padding: 12, borderRadius: 10 }}
         >

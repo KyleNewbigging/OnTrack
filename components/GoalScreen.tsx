@@ -3,11 +3,11 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, TextInput, ScrollView, Modal, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { useStore, getCustomFrequencyProgress, shouldShowCustomTask } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import { format, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 import { Frequency, CustomFrequency } from "../types";
+import { haptics } from "../utils/haptics";
 
 type RootStackParamList = {
   Home: undefined;
@@ -37,6 +37,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
     dates.some(date => format(date, "yyyy-MM-dd") === format(referenceDate, "yyyy-MM-dd"));
 
   const confirmDeleteTask = (taskId: string, taskTitle: string) => {
+    void haptics.warning();
     Alert.alert(
       "Delete task?",
       `This will remove "${taskTitle}" from this goal.`,
@@ -45,8 +46,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         {
           text: "Delete",
           style: "destructive",
-          onPress: async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress: () => {
+            void haptics.destructive();
             deleteSubGoal(goalId, taskId);
           }
         }
@@ -115,8 +116,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         {goal.target && <Text style={{ color: theme.textSecondary }}>Target: {goal.target}</Text>}
         <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
           <Pressable
-            onPress={async () => {
-              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onPress={() => {
+              void haptics.navigate();
               navigation.navigate("Consistency", { goalId });
             }}
             style={{
@@ -171,8 +172,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
           pendingTasks.map((item, index) => (
             <View key={item.id}>
               <Pressable
-                onPress={async () => {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onPress={() => {
+                  void haptics.success();
                   toggleTask(goalId, item.id);
                 }}
                 style={{
@@ -278,8 +279,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             {completedTasks.map((item, index) => (
               <View key={item.id}>
                 <Pressable
-                  onPress={async () => {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onPress={() => {
+                    void haptics.tap();
                     toggleTask(goalId, item.id);
                   }}
                   style={{
@@ -373,8 +374,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         ) : null}
 
         <Pressable
-          onPress={async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress={() => {
+            void haptics.tap();
             setIsEditing(!isEditing);
           }}
           style={{
@@ -401,7 +402,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
           animationType="fade"
           transparent={true}
           visible={isEditing}
-          onRequestClose={() => setIsEditing(false)}
+          onRequestClose={() => {
+            void haptics.tap();
+            setIsEditing(false);
+          }}
         >
           <View
             style={{
@@ -412,7 +416,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             }}
           >
             <Pressable
-              onPress={() => setIsEditing(false)}
+              onPress={() => {
+                void haptics.tap();
+                setIsEditing(false);
+              }}
               style={{
                 position: "absolute",
                 top: 0,
@@ -444,8 +451,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 {(["once", "daily", "weekly", "custom"] as Frequency[]).map((f) => (
                   <Pressable
                     key={f}
-                    onPress={async () => {
-                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onPress={() => {
+                      void haptics.toggle();
                       setFrequency(f);
                     }}
                     style={{
@@ -492,8 +499,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                     {(["weekly", "monthly"] as const).map((type) => (
                       <Pressable
                         key={type}
-                        onPress={async () => {
-                          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        onPress={() => {
+                          void haptics.toggle();
                           setCustomFrequency(prev => ({ ...prev, type }));
                         }}
                         style={{
@@ -516,7 +523,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
 
               <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
                 <Pressable
-                  onPress={() => setIsEditing(false)}
+                  onPress={() => {
+                    void haptics.tap();
+                    setIsEditing(false);
+                  }}
                   style={{
                     flex: 1,
                     backgroundColor: theme.background,
@@ -529,9 +539,9 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                   <Text style={{ color: theme.textSecondary, textAlign: "center", fontWeight: "600" }}>Cancel</Text>
                 </Pressable>
                 <Pressable
-                  onPress={async () => {
+                  onPress={() => {
                     if (subTitle.trim()) {
-                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      void haptics.success();
                       addSubGoal(
                         goalId,
                         subTitle.trim(),
@@ -540,7 +550,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                       );
                       setSubTitle("");
                       setIsEditing(false);
+                      return;
                     }
+
+                    void haptics.error();
                   }}
                   style={{ flex: 1, backgroundColor: theme.primary, padding: 10, borderRadius: 8 }}
                 >

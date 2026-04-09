@@ -14,7 +14,7 @@ Use ✅ when done, keep lines short and actionable.
 - [x] Persist state with AsyncStorage
 - [x] Input labels for clarity
 - [x] Handle empty states (no goals, no sub-goals)
-- [ ] Delete sub-goal/task
+- [x] Delete sub-goal/task
 - [ ] Consistency heatmap (aggregate completions per day)
 
 ---

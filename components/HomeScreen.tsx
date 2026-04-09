@@ -3,10 +3,10 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, ScrollView, Alert, Switch, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from "expo-haptics";
 import { useStore, debugAsyncStorage, getCurrentMode } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import RadarChart from "./RadarChart";
+import { haptics } from "../utils/haptics";
 
 type RootStackParamList = {
   Home: undefined;
@@ -31,8 +31,8 @@ export default function HomeScreen({ navigation }: HomeProps) {
     navigation.setOptions({
       headerRight: () => (
         <Pressable
-          onPress={async () => {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress={() => {
+            void haptics.tap();
             setSettingsVisible(true);
           }}
           style={{ padding: 8 }}
@@ -66,8 +66,8 @@ export default function HomeScreen({ navigation }: HomeProps) {
               >
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                   <Pressable
-                    onPress={async () => {
-                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onPress={() => {
+                      void haptics.navigate();
                       navigation.navigate("Goal", { goalId: goal.id });
                     }}
                     style={{ flex: 1 }}
@@ -79,6 +79,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
 
                   <Pressable
                     onPress={() => {
+                      void haptics.warning();
                       Alert.alert(
                         "Delete goal?",
                         `This will remove "${goal.title}" and all its sub-goals.`,
@@ -87,8 +88,8 @@ export default function HomeScreen({ navigation }: HomeProps) {
                           {
                             text: "Delete",
                             style: "destructive",
-                            onPress: async () => {
-                              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            onPress: () => {
+                              void haptics.destructive();
                               deleteGoal(goal.id);
                             }
                           }
@@ -112,8 +113,8 @@ export default function HomeScreen({ navigation }: HomeProps) {
           ))}
 
           <Pressable
-            onPress={async () => {
-              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onPress={() => {
+              void haptics.navigate();
               navigation.navigate("NewGoal");
             }}
             style={{
@@ -138,7 +139,10 @@ export default function HomeScreen({ navigation }: HomeProps) {
         animationType="slide"
         transparent={true}
         visible={settingsVisible}
-        onRequestClose={() => setSettingsVisible(false)}
+        onRequestClose={() => {
+          void haptics.tap();
+          setSettingsVisible(false);
+        }}
       >
         <View style={{ 
           flex: 1, 
@@ -158,8 +162,8 @@ export default function HomeScreen({ navigation }: HomeProps) {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <Text style={{ fontSize: 18, fontWeight: '700', color: theme.text }}>Settings</Text>
               <Pressable
-                onPress={async () => {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onPress={() => {
+                  void haptics.tap();
                   setSettingsVisible(false);
                 }}
                 style={{ 
@@ -177,8 +181,8 @@ export default function HomeScreen({ navigation }: HomeProps) {
               <Text style={{ color: theme.text, fontWeight: "600", fontSize: 16 }}>Dark Mode</Text>
               <Switch
                 value={isDark}
-                onValueChange={async () => {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onValueChange={() => {
+                  void haptics.toggle();
                   toggleTheme();
                 }}
                 trackColor={{ false: theme.border, true: theme.primary }}
@@ -187,8 +191,8 @@ export default function HomeScreen({ navigation }: HomeProps) {
             </View>
 
             <Pressable
-              onPress={async () => {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onPress={() => {
+                void haptics.navigate();
                 setSettingsVisible(false);
                 navigation.navigate("Privacy");
               }}
@@ -225,8 +229,8 @@ export default function HomeScreen({ navigation }: HomeProps) {
                 </View>
 
                 <Pressable
-                  onPress={async () => {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onPress={() => {
+                    void haptics.tap();
                     debugAsyncStorage();
                     setSettingsVisible(false);
                   }}
@@ -245,7 +249,8 @@ export default function HomeScreen({ navigation }: HomeProps) {
 
             {/* Clear Stores Button */}
             <Pressable
-              onPress={async () => {
+              onPress={() => {
+                void haptics.warning();
                 Alert.alert(
                   "Reset app data?",
                   "This will permanently delete all goals, tasks, and completion history stored on this device.",
@@ -256,7 +261,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
                       style: "destructive", 
                       onPress: async () => {
                         try {
-                          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                          await haptics.destructive();
 
                           resetAppData();
                           await resetThemePreference();
