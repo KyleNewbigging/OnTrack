@@ -21,6 +21,7 @@ type HomeProps = NativeStackScreenProps<RootStackParamList, "Home">;
 export default function HomeScreen({ navigation }: HomeProps) {
   const goals = useStore((s) => s.goals);
   const resetAppData = useStore((s) => s.resetAppData);
+  const deleteGoal = useStore((s) => s.deleteGoal);
   const currentMode = getCurrentMode();
   const { theme, isDark, toggleTheme, resetThemePreference } = useTheme();
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -46,17 +47,6 @@ export default function HomeScreen({ navigation }: HomeProps) {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
       <ScrollView style={{ flex: 1, backgroundColor: theme.background }} showsVerticalScrollIndicator={false}>
         <View style={{ padding: 16, gap: 12 }}>
-          
-          <Pressable
-            onPress={async () => {
-              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate("NewGoal");
-            }}
-            style={{ backgroundColor: theme.primary, padding: 12, borderRadius: 10 }}
-          >
-            <Text style={{ color: "white", fontWeight: "600", textAlign: "center" }}>+ New Goal</Text>
-          </Pressable>
-
           <Text style={{ fontSize: 18, fontWeight: "700", color: theme.text }}>Consistency Overview</Text>
           <RadarChart goals={goals} size={250} />
 
@@ -65,11 +55,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
           {/* Goals list */}
           {goals.map((goal, index) => (
             <View key={goal.id}>
-              <Pressable
-                onPress={async () => {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  navigation.navigate("Goal", { goalId: goal.id });
-                }}
+              <View
                 style={{ 
                   borderWidth: 1, 
                   borderColor: theme.border, 
@@ -78,13 +64,69 @@ export default function HomeScreen({ navigation }: HomeProps) {
                   backgroundColor: theme.surface 
                 }}
               >
-                <Text style={{ fontSize: 16, fontWeight: "700", color: theme.text }}>{goal.title}</Text>
-                {goal.target && <Text style={{ color: theme.textSecondary }}>Target: {goal.target}</Text>}
-                <Text style={{ color: theme.textSecondary }}>Sub-goals: {goal.subGoals.length}</Text>
-              </Pressable>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                  <Pressable
+                    onPress={async () => {
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      navigation.navigate("Goal", { goalId: goal.id });
+                    }}
+                    style={{ flex: 1 }}
+                  >
+                    <Text style={{ fontSize: 16, fontWeight: "700", color: theme.text }}>{goal.title}</Text>
+                    {goal.target && <Text style={{ color: theme.textSecondary }}>Target: {goal.target}</Text>}
+                    <Text style={{ color: theme.textSecondary }}>Sub-goals: {goal.subGoals.length}</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => {
+                      Alert.alert(
+                        "Delete goal?",
+                        `This will remove "${goal.title}" and all its sub-goals.`,
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          {
+                            text: "Delete",
+                            style: "destructive",
+                            onPress: async () => {
+                              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                              deleteGoal(goal.id);
+                            }
+                          }
+                        ]
+                      );
+                    }}
+                    style={{
+                      alignSelf: "center",
+                      borderRadius: 9999,
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      opacity: 0.35
+                    }}
+                  >
+                    <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
+                  </Pressable>
+                </View>
+              </View>
               {index < goals.length - 1 && <View style={{ height: 8 }} />}
             </View>
           ))}
+
+          <Pressable
+            onPress={async () => {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate("NewGoal");
+            }}
+            style={{
+              backgroundColor: theme.surface,
+              borderWidth: 1,
+              borderColor: theme.border,
+              padding: 12,
+              borderRadius: 10,
+              marginTop: 4,
+            }}
+          >
+            <Text style={{ color: theme.textSecondary, fontWeight: "600", textAlign: "center" }}>+ New Goal</Text>
+          </Pressable>
           
           {/* Add bottom padding so content doesn't get cut off */}
           <View style={{ height: 20 }} />

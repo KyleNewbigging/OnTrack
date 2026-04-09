@@ -1,7 +1,8 @@
 import React from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Text, View, Pressable, TextInput, FlatList, Alert } from "react-native";
+import { Text, View, Pressable, TextInput, FlatList, Alert, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useStore, getCustomFrequencyProgress, shouldShowCustomTask } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
@@ -22,7 +23,6 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const goal = useStore((s) => s.goals.find((g) => g.id === goalId)!);
   const addSubGoal = useStore((s) => s.addSubGoal);
   const toggleTask = useStore((s) => s.toggleTaskCompletion);
-  const deleteGoal = useStore((s) => s.deleteGoal);
   const { theme } = useTheme();
 
   const [subTitle, setSubTitle] = React.useState("");
@@ -47,163 +47,33 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               navigation.navigate("Consistency", { goalId });
             }}
             style={{
-              backgroundColor: "#3b82f6",
-              paddingVertical: 8,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              backgroundColor: theme.surface,
+              borderWidth: 1,
+              borderColor: theme.primary + "55",
+              paddingVertical: 10,
               paddingHorizontal: 14,
-              borderRadius: 9999, // pill
+              borderRadius: 9999,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "700" }}>See Consistency</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={async () => {
-              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setIsEditing(!isEditing);
-            }}
-            style={{
-              backgroundColor: theme.textSecondary,
-              paddingVertical: 8,
-              paddingHorizontal: 14,
-              borderRadius: 9999, // pill
-            }}
-          >
-            <Text style={{ color: theme.background, fontWeight: "700" }}>{isEditing ? "Finish Editing" : "Edit"}</Text>
-          </Pressable>
-        </View>
-
-        {isEditing && (
-          <View style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 10, padding: 12, gap: 8, backgroundColor: theme.surface }}>
-          <Text style={{ fontWeight: "700", color: theme.text }}>Add sub-goal / task</Text>
-          <TextInput
-            placeholder="e.g., Take creatine"
-            value={subTitle}
-            onChangeText={setSubTitle}
-            style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 8, padding: 8, backgroundColor: theme.background, color: theme.text }}
-            placeholderTextColor={theme.textSecondary}
-          />
-          <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-            {(["once", "daily", "weekly", "custom"] as Frequency[]).map((f) => (
-              <Pressable
-                key={f}
-                onPress={async () => {
-                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setFrequency(f);
-                }}
-                style={{
-                  paddingHorizontal: 10,
-                  paddingVertical: 6,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: frequency === f ? theme.primary : theme.border,
-                  backgroundColor: frequency === f ? theme.primary + "20" : "transparent",
-                }}
-              >
-                <Text style={{ fontWeight: "600", color: frequency === f ? theme.primary : theme.text }}>{f}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {/* Custom Frequency Controls */}
-          {frequency === "custom" && (
-            <View style={{ gap: 8 }}>
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <TextInput
-                  placeholder="3"
-                  value={customFrequency.target.toString()}
-                  onChangeText={(text) => {
-                    const num = parseInt(text) || 1;
-                    setCustomFrequency(prev => ({ ...prev, target: Math.max(1, num) }));
-                  }}
-                  keyboardType="numeric"
-                  style={{
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                    borderRadius: 8,
-                    padding: 8,
-                    backgroundColor: theme.background,
-                    color: theme.text,
-                    width: 60,
-                    textAlign: "center"
-                  }}
-                  placeholderTextColor={theme.textSecondary}
-                />
-                <Text style={{ color: theme.text, alignSelf: "center" }}>times per</Text>
-              </View>
-              
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                {(["weekly", "monthly"] as const).map((type) => (
-                  <Pressable
-                    key={type}
-                    onPress={async () => {
-                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setCustomFrequency(prev => ({ ...prev, type }));
-                    }}
-                    style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: customFrequency.type === type ? theme.primary : theme.border,
-                      backgroundColor: customFrequency.type === type ? theme.primary + "20" : "transparent",
-                    }}
-                  >
-                    <Text style={{ fontWeight: "600", color: customFrequency.type === type ? theme.primary : theme.text }}>
-                      {type}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+            <View
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: theme.primary + "20",
+              }}
+            >
+              <Ionicons name="analytics-outline" size={14} color={theme.primary} />
             </View>
-          )}
-          <Pressable
-            onPress={async () => {
-              if (subTitle.trim()) {
-                await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                addSubGoal(
-                  goalId, 
-                  subTitle.trim(), 
-                  frequency,
-                  frequency === "custom" ? customFrequency : undefined
-                );
-                setSubTitle("");
-              }
-            }}
-            style={{ backgroundColor: theme.primary, padding: 10, borderRadius: 8 }}
-          >
-            <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>Add</Text>
-          </Pressable>
-          
-          {/* Delete Goal Button - Only visible when editing */}
-          <Pressable
-            onPress={() => {
-              Alert.alert(
-                "Delete goal?",
-                `This will remove "${goal.title}" and all its sub-goals.`,
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Delete", style: "destructive", onPress: async () => {
-                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      deleteGoal(goal.id);
-                      // after delete, pop back to Home
-                      navigation.goBack();
-                    }
-                  },
-                ]
-              );
-            }}
-            style={{
-              backgroundColor: theme.danger,
-              padding: 10,
-              borderRadius: 8,
-              marginTop: 8
-            }}
-          >
-            <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>Delete Goal</Text>
+            <Text style={{ color: theme.text, fontWeight: "700" }}>See Consistency</Text>
+            <Ionicons name="arrow-forward" size={14} color={theme.textSecondary} />
           </Pressable>
         </View>
-        )}
 
         {/* Pending Tasks Section */}
         <Text style={{ fontWeight: "700", marginTop: 4, color: theme.text }}>Tasks</Text>
@@ -478,6 +348,185 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
           </>
         ) : null;
         })()}
+
+        <Pressable
+          onPress={async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setIsEditing(!isEditing);
+          }}
+          style={{
+            backgroundColor: theme.surface,
+            borderWidth: 1,
+            borderColor: theme.border,
+            padding: 12,
+            borderRadius: 10,
+            marginTop: 8
+          }}
+        >
+          <Text
+            style={{
+              color: theme.textSecondary,
+              textAlign: "center",
+              fontWeight: "600"
+            }}
+          >
+            + New Task
+          </Text>
+        </Pressable>
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={isEditing}
+          onRequestClose={() => setIsEditing(false)}
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              padding: 24,
+              backgroundColor: "rgba(15, 23, 42, 0.35)"
+            }}
+          >
+            <Pressable
+              onPress={() => setIsEditing(false)}
+              style={{
+                position: "absolute",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0
+              }}
+            />
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: theme.border,
+                borderRadius: 16,
+                padding: 16,
+                gap: 10,
+                backgroundColor: theme.surface,
+              }}
+            >
+              <Text style={{ fontWeight: "700", fontSize: 18, color: theme.text }}>New Task</Text>
+              <TextInput
+                placeholder="e.g., Take creatine"
+                value={subTitle}
+                onChangeText={setSubTitle}
+                style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 8, padding: 10, backgroundColor: theme.background, color: theme.text }}
+                placeholderTextColor={theme.textSecondary}
+                autoFocus={true}
+              />
+              <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                {(["once", "daily", "weekly", "custom"] as Frequency[]).map((f) => (
+                  <Pressable
+                    key={f}
+                    onPress={async () => {
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setFrequency(f);
+                    }}
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: frequency === f ? theme.primary : theme.border,
+                      backgroundColor: frequency === f ? theme.primary + "20" : "transparent",
+                    }}
+                  >
+                    <Text style={{ fontWeight: "600", color: frequency === f ? theme.primary : theme.text }}>{f}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {frequency === "custom" && (
+                <View style={{ gap: 8 }}>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <TextInput
+                      placeholder="3"
+                      value={customFrequency.target.toString()}
+                      onChangeText={(text) => {
+                        const num = parseInt(text) || 1;
+                        setCustomFrequency(prev => ({ ...prev, target: Math.max(1, num) }));
+                      }}
+                      keyboardType="numeric"
+                      style={{
+                        borderWidth: 1,
+                        borderColor: theme.border,
+                        borderRadius: 8,
+                        padding: 8,
+                        backgroundColor: theme.background,
+                        color: theme.text,
+                        width: 60,
+                        textAlign: "center"
+                      }}
+                      placeholderTextColor={theme.textSecondary}
+                    />
+                    <Text style={{ color: theme.text, alignSelf: "center" }}>times per</Text>
+                  </View>
+
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    {(["weekly", "monthly"] as const).map((type) => (
+                      <Pressable
+                        key={type}
+                        onPress={async () => {
+                          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setCustomFrequency(prev => ({ ...prev, type }));
+                        }}
+                        style={{
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          borderColor: customFrequency.type === type ? theme.primary : theme.border,
+                          backgroundColor: customFrequency.type === type ? theme.primary + "20" : "transparent",
+                        }}
+                      >
+                        <Text style={{ fontWeight: "600", color: customFrequency.type === type ? theme.primary : theme.text }}>
+                          {type}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
+                <Pressable
+                  onPress={() => setIsEditing(false)}
+                  style={{
+                    flex: 1,
+                    backgroundColor: theme.background,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    padding: 10,
+                    borderRadius: 8
+                  }}
+                >
+                  <Text style={{ color: theme.textSecondary, textAlign: "center", fontWeight: "600" }}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  onPress={async () => {
+                    if (subTitle.trim()) {
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      addSubGoal(
+                        goalId,
+                        subTitle.trim(),
+                        frequency,
+                        frequency === "custom" ? customFrequency : undefined
+                      );
+                      setSubTitle("");
+                      setIsEditing(false);
+                    }
+                  }}
+                  style={{ flex: 1, backgroundColor: theme.primary, padding: 10, borderRadius: 8 }}
+                >
+                  <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>Add</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
