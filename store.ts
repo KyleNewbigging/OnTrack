@@ -463,6 +463,7 @@ interface State {
     goals: Goal[];
     addGoal: (title: string, target?: string) => void;
     addSubGoal: (goalId: string, title: string, frequency: Frequency, customFrequency?: CustomFrequency) => void;
+    deleteSubGoal: (goalId: string, subGoalId: string) => void;
     toggleTaskCompletion: (goalId: string, subId: string, date?: Date) => void;
     completionsByDate: () => Record<string, number>;
     deleteGoal: (goalId: string) => void;
@@ -503,6 +504,17 @@ export const useStore = create<State>()(
                                         completions: [] 
                                     },
                                 ],
+                            }
+                            : g
+                    ),
+                })),
+            deleteSubGoal: (goalId, subGoalId) =>
+                set((s) => ({
+                    goals: s.goals.map((g) =>
+                        g.id === goalId
+                            ? {
+                                ...g,
+                                subGoals: g.subGoals.filter((subGoal) => subGoal.id !== subGoalId),
                             }
                             : g
                     ),

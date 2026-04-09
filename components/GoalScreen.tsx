@@ -1,6 +1,6 @@
 import React from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Text, View, Pressable, TextInput, ScrollView, Modal } from "react-native";
+import { Text, View, Pressable, TextInput, ScrollView, Modal, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -22,6 +22,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const { goalId } = route.params;
   const goal = useStore((s) => s.goals.find((g) => g.id === goalId)!);
   const addSubGoal = useStore((s) => s.addSubGoal);
+  const deleteSubGoal = useStore((s) => s.deleteSubGoal);
   const toggleTask = useStore((s) => s.toggleTaskCompletion);
   const { theme } = useTheme();
 
@@ -34,6 +35,24 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
 
   const isCompletedToday = (dates: Date[], referenceDate: Date) =>
     dates.some(date => format(date, "yyyy-MM-dd") === format(referenceDate, "yyyy-MM-dd"));
+
+  const confirmDeleteTask = (taskId: string, taskTitle: string) => {
+    Alert.alert(
+      "Delete task?",
+      `This will remove "${taskTitle}" from this goal.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            deleteSubGoal(goalId, taskId);
+          }
+        }
+      ]
+    );
+  };
 
   const today = new Date();
   const pendingTasks = goal.subGoals.filter(item => {
@@ -165,7 +184,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 }}
               >
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, paddingRight: 12 }}>
                     <Text style={{ fontWeight: "700", color: theme.text }}>{item.title}</Text>
                     {item.frequency === "custom" && item.customFrequency ? (() => {
                       const progress = getCustomFrequencyProgress(item, new Date());
@@ -232,6 +251,19 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                       );
                     })()}
                   </View>
+                  <Pressable
+                    onPress={() => confirmDeleteTask(item.id, item.title)}
+                    hitSlop={8}
+                    style={{
+                      alignSelf: "center",
+                      borderRadius: 9999,
+                      paddingHorizontal: 4,
+                      paddingVertical: 4,
+                      opacity: 0.35
+                    }}
+                  >
+                    <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
+                  </Pressable>
                 </View>
               </Pressable>
               {index < pendingTasks.length - 1 && <View style={{ height: 8 }} />}
@@ -260,7 +292,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                   }}
                 >
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <View style={{ flex: 1 }}>
+                    <View style={{ flex: 1, paddingRight: 12 }}>
                       <Text style={{ fontWeight: "700", color: theme.textSecondary, textDecorationLine: "line-through" }}>{item.title}</Text>
                       {item.frequency === "custom" && item.customFrequency ? (() => {
                         const progress = getCustomFrequencyProgress(item, new Date());
@@ -319,6 +351,19 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                         );
                       })()}
                     </View>
+                    <Pressable
+                      onPress={() => confirmDeleteTask(item.id, item.title)}
+                      hitSlop={8}
+                      style={{
+                        alignSelf: "center",
+                        borderRadius: 9999,
+                        paddingHorizontal: 4,
+                        paddingVertical: 4,
+                        opacity: 0.35
+                      }}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
+                    </Pressable>
                   </View>
                 </Pressable>
                 {index < completedTasks.length - 1 && <View style={{ height: 8 }} />}
