@@ -1,6 +1,6 @@
 import React from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Text, View, Pressable, TextInput, FlatList, Alert, Modal } from "react-native";
+import { Text, View, Pressable, TextInput, ScrollView, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -35,9 +35,63 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const isCompletedToday = (dates: Date[], referenceDate: Date) =>
     dates.some(date => format(date, "yyyy-MM-dd") === format(referenceDate, "yyyy-MM-dd"));
 
+  const today = new Date();
+  const pendingTasks = goal.subGoals.filter(item => {
+    if (item.frequency === "custom") {
+      return shouldShowCustomTask(item, today);
+    }
+
+    if (item.frequency === "daily") {
+      return !isCompletedToday(item.completions, today);
+    }
+
+    if (item.frequency === "weekly") {
+      const weekStart = startOfWeek(today, { weekStartsOn: 0 });
+      const weekEnd = endOfWeek(today, { weekStartsOn: 0 });
+      return !item.completions.some(date =>
+        isWithinInterval(date, { start: weekStart, end: weekEnd })
+      );
+    }
+
+    if (item.frequency === "once") {
+      return item.completions.length === 0;
+    }
+
+    return true;
+  });
+
+  const completedTasks = goal.subGoals.filter(item => {
+    if (item.frequency === "custom") {
+      const progress = getCustomFrequencyProgress(item, today);
+      return isCompletedToday(item.completions, today) || progress.achieved;
+    }
+
+    if (item.frequency === "daily") {
+      return isCompletedToday(item.completions, today);
+    }
+
+    if (item.frequency === "weekly") {
+      const weekStart = startOfWeek(today, { weekStartsOn: 0 });
+      const weekEnd = endOfWeek(today, { weekStartsOn: 0 });
+      return item.completions.some(date =>
+        isWithinInterval(date, { start: weekStart, end: weekEnd })
+      );
+    }
+
+    if (item.frequency === "once") {
+      return item.completions.length > 0;
+    }
+
+    return false;
+  });
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
-      <View style={{ padding: 16, gap: 12 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 28 }}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text }}>{goal.title}</Text>
         {goal.target && <Text style={{ color: theme.textSecondary }}>Target: {goal.target}</Text>}
         <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
@@ -77,194 +131,120 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
 
         {/* Pending Tasks Section */}
         <Text style={{ fontWeight: "700", marginTop: 4, color: theme.text }}>Tasks</Text>
-        {(() => {
-          const today = new Date();
-          const pendingTasks = goal.subGoals.filter(item => {
-            // For custom frequency, check if target is achieved this period
-            if (item.frequency === "custom") {
-              return shouldShowCustomTask(item, today);
-            }
-            
-            // For daily tasks, check if completed today
-            if (item.frequency === "daily") {
-              return !isCompletedToday(item.completions, today);
-            }
-            
-            // For weekly tasks, check if completed this week
-            if (item.frequency === "weekly") {
-              const weekStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
-              const weekEnd = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
-              return !item.completions.some(date => 
-                isWithinInterval(date, { start: weekStart, end: weekEnd })
-              );
-            }
-            
-            // For "once" frequency, check if ever completed
-            if (item.frequency === "once") {
-              return item.completions.length === 0;
-            }
-            
-            return true; // Default to showing the task
-          });
-          
-          if (pendingTasks.length === 0) {
-            return (
-              <View style={{
-                padding: 20,
-                borderRadius: 12,
-                backgroundColor: theme.completionCard,
-                borderWidth: 1,
-                borderColor: theme.completionCardBorder,
-                alignItems: "center",
-                marginTop: 8
-              }}>
-                <Text style={{ fontWeight: "700", fontSize: 18, color: theme.success, marginBottom: 4 }}>
-                  All done for today!
-                </Text>
-                <Text style={{ color: theme.success, textAlign: "center" }}>
-                  You're right on track! All tasks completed.
-                </Text>
-              </View>
-            );
-          }
-          
-          return (
-            <FlatList
-              data={pendingTasks}
-              keyExtractor={(t) => t.id}
-              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-              renderItem={({ item }) => (
-                <Pressable
-                  onPress={async () => {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    toggleTask(goalId, item.id);
-                  }}
-                  style={{
-                    padding: 12,
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                    borderRadius: 10,
-                    backgroundColor: theme.surface,
-                  }}
-                >
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontWeight: "700", color: theme.text }}>{item.title}</Text>
-                      {item.frequency === "custom" && item.customFrequency ? (() => {
-                        const progress = getCustomFrequencyProgress(item, new Date());
-                        return (
-                          <View style={{ marginTop: 8 }}>
-                            <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 4 }}>
-                              {progress.completed}/{progress.target} times this {item.customFrequency.type.slice(0, -2)}
-                            </Text>
-                            {/* Segmented Progress Bar */}
-                            <View style={{ flexDirection: "row", gap: 2 }}>
-                              {Array.from({ length: progress.target }, (_, index) => (
-                                <View
-                                  key={index}
-                                  style={{
-                                    flex: 1,
-                                    height: 6,
-                                    backgroundColor: index < progress.completed ? theme.primary : theme.border,
-                                    borderRadius: 3,
-                                  }}
-                                />
-                              ))}
-                            </View>
-                            {progress.target > progress.completed && (
-                              <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 2 }}>
-                                {progress.target - progress.completed} more to go
-                              </Text>
-                            )}
+        {pendingTasks.length === 0 ? (
+          <View style={{
+            padding: 20,
+            borderRadius: 12,
+            backgroundColor: theme.completionCard,
+            borderWidth: 1,
+            borderColor: theme.completionCardBorder,
+            alignItems: "center",
+            marginTop: 8
+          }}>
+            <Text style={{ fontWeight: "700", fontSize: 18, color: theme.success, marginBottom: 4 }}>
+              All done for today!
+            </Text>
+            <Text style={{ color: theme.success, textAlign: "center" }}>
+              You're right on track! All tasks completed.
+            </Text>
+          </View>
+        ) : (
+          pendingTasks.map((item, index) => (
+            <View key={item.id}>
+              <Pressable
+                onPress={async () => {
+                  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  toggleTask(goalId, item.id);
+                }}
+                style={{
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                  borderRadius: 10,
+                  backgroundColor: theme.surface,
+                }}
+              >
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: "700", color: theme.text }}>{item.title}</Text>
+                    {item.frequency === "custom" && item.customFrequency ? (() => {
+                      const progress = getCustomFrequencyProgress(item, new Date());
+                      return (
+                        <View style={{ marginTop: 8 }}>
+                          <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 4 }}>
+                            {progress.completed}/{progress.target} times this {item.customFrequency.type.slice(0, -2)}
+                          </Text>
+                          <View style={{ flexDirection: "row", gap: 2 }}>
+                            {Array.from({ length: progress.target }, (_, progressIndex) => (
+                              <View
+                                key={progressIndex}
+                                style={{
+                                  flex: 1,
+                                  height: 6,
+                                  backgroundColor: progressIndex < progress.completed ? theme.primary : theme.border,
+                                  borderRadius: 3,
+                                }}
+                              />
+                            ))}
                           </View>
+                          {progress.target > progress.completed && (
+                            <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 2 }}>
+                              {progress.target - progress.completed} more to go
+                            </Text>
+                          )}
+                        </View>
+                      );
+                    })() : (() => {
+                      if (item.frequency === "weekly") {
+                        const weekStart = startOfWeek(today, { weekStartsOn: 0 });
+                        const weekEnd = endOfWeek(today, { weekStartsOn: 0 });
+                        const completedThisWeek = item.completions.some(date =>
+                          isWithinInterval(date, { start: weekStart, end: weekEnd })
                         );
-                      })() : (() => {
-                        // Handle other frequency types
-                        if (item.frequency === "weekly") {
-                          const today = new Date();
-                          const weekStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
-                          const weekEnd = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
-                          const completedThisWeek = item.completions.some(date => 
-                            isWithinInterval(date, { start: weekStart, end: weekEnd })
-                          );
-                          return (
-                            <>
-                              <Text style={{ color: theme.textSecondary }}>Frequency: Weekly</Text>
-                              <Text style={{ color: theme.textSecondary }}>
-                                Done this week: {completedThisWeek ? "Yes" : "No"}
-                              </Text>
-                            </>
-                          );
-                        } else if (item.frequency === "daily") {
-                          return (
-                            <>
-                              <Text style={{ color: theme.textSecondary }}>Frequency: Daily</Text>
-                              <Text style={{ color: theme.textSecondary }}>Done today: No</Text>
-                            </>
-                          );
-                        } else if (item.frequency === "once") {
-                          return (
-                            <>
-                              <Text style={{ color: theme.textSecondary }}>Frequency: Once</Text>
-                              <Text style={{ color: theme.textSecondary }}>Status: Pending</Text>
-                            </>
-                          );
-                        }
                         return (
                           <>
-                            <Text style={{ color: theme.textSecondary }}>Frequency: {item.frequency}</Text>
+                            <Text style={{ color: theme.textSecondary }}>Frequency: Weekly</Text>
+                            <Text style={{ color: theme.textSecondary }}>
+                              Done this week: {completedThisWeek ? "Yes" : "No"}
+                            </Text>
+                          </>
+                        );
+                      } else if (item.frequency === "daily") {
+                        return (
+                          <>
+                            <Text style={{ color: theme.textSecondary }}>Frequency: Daily</Text>
+                            <Text style={{ color: theme.textSecondary }}>Done today: No</Text>
+                          </>
+                        );
+                      } else if (item.frequency === "once") {
+                        return (
+                          <>
+                            <Text style={{ color: theme.textSecondary }}>Frequency: Once</Text>
                             <Text style={{ color: theme.textSecondary }}>Status: Pending</Text>
                           </>
                         );
-                      })()}
-                    </View>
+                      }
+                      return (
+                        <>
+                          <Text style={{ color: theme.textSecondary }}>Frequency: {item.frequency}</Text>
+                          <Text style={{ color: theme.textSecondary }}>Status: Pending</Text>
+                        </>
+                      );
+                    })()}
                   </View>
-                </Pressable>
-              )}
-            />
-          );
-        })()}
+                </View>
+              </Pressable>
+              {index < pendingTasks.length - 1 && <View style={{ height: 8 }} />}
+            </View>
+          ))
+        )}
 
         {/* Completed Tasks Section */}
-        {(() => {
-          const today = new Date();
-          const completedTasks = goal.subGoals.filter(item => {
-            // For custom frequency tasks, check if achieved
-            if (item.frequency === "custom") {
-              const progress = getCustomFrequencyProgress(item, today);
-              return isCompletedToday(item.completions, today) || progress.achieved;
-            }
-            
-            // For daily tasks, check if completed today
-            if (item.frequency === "daily") {
-              return isCompletedToday(item.completions, today);
-            }
-            
-            // For weekly tasks, check if completed this week
-            if (item.frequency === "weekly") {
-              const weekStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday
-              const weekEnd = endOfWeek(today, { weekStartsOn: 0 }); // Saturday
-              return item.completions.some(date => 
-                isWithinInterval(date, { start: weekStart, end: weekEnd })
-              );
-            }
-            
-            // For "once" frequency, check if ever completed
-            if (item.frequency === "once") {
-              return item.completions.length > 0;
-            }
-            
-            return false; // Default to not completed
-          });
-          
-          return completedTasks.length > 0 ? (
-            <>
-              <Text style={{ fontWeight: "700", marginTop: 16, color: theme.textSecondary }}>Completed</Text>
-              <FlatList
-                data={completedTasks}
-              keyExtractor={(t) => t.id}
-              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-              renderItem={({ item }) => (
+        {completedTasks.length > 0 ? (
+          <>
+            <Text style={{ fontWeight: "700", marginTop: 16, color: theme.textSecondary }}>Completed</Text>
+            {completedTasks.map((item, index) => (
+              <View key={item.id}>
                 <Pressable
                   onPress={async () => {
                     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -290,15 +270,14 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                             <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 4 }}>
                               {progress.completed}/{progress.target} times this {item.customFrequency.type.slice(0, -2)}
                             </Text>
-                            {/* Segmented Progress Bar */}
                             <View style={{ flexDirection: "row", gap: 2 }}>
-                              {Array.from({ length: progress.target }, (_, index) => (
+                              {Array.from({ length: progress.target }, (_, progressIndex) => (
                                 <View
-                                  key={index}
+                                  key={progressIndex}
                                   style={{
                                     flex: 1,
                                     height: 6,
-                                    backgroundColor: index < progress.completed ? theme.success : theme.border,
+                                    backgroundColor: progressIndex < progress.completed ? theme.success : theme.border,
                                     borderRadius: 3,
                                   }}
                                 />
@@ -310,7 +289,6 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                           </View>
                         );
                       })() : (() => {
-                        // Handle other frequency types
                         if (item.frequency === "weekly") {
                           return (
                             <>
@@ -343,11 +321,11 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                     </View>
                   </View>
                 </Pressable>
-              )}
-            />
+                {index < completedTasks.length - 1 && <View style={{ height: 8 }} />}
+              </View>
+            ))}
           </>
-        ) : null;
-        })()}
+        ) : null}
 
         <Pressable
           onPress={async () => {
@@ -527,7 +505,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             </View>
           </View>
         </Modal>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
