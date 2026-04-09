@@ -42,8 +42,9 @@ export const getCustomFrequencyProgress = (task: SubGoal, referenceDate: Date = 
 export const shouldShowCustomTask = (task: SubGoal, referenceDate: Date = new Date()): boolean => {
   if (task.frequency !== "custom") return true;
   
+  const completedToday = task.completions.some(date => isSameDay(date, referenceDate));
   const { achieved } = getCustomFrequencyProgress(task, referenceDate);
-  return !achieved; // Show task if target not yet achieved this period
+  return !completedToday && !achieved;
 };
 
 // Helper to calculate streak for any goal type

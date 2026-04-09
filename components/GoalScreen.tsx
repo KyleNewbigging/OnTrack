@@ -32,6 +32,9 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
 
   if (!goal) return <Text>Not found</Text>;
 
+  const isCompletedToday = (dates: Date[], referenceDate: Date) =>
+    dates.some(date => format(date, "yyyy-MM-dd") === format(referenceDate, "yyyy-MM-dd"));
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
       <View style={{ padding: 16, gap: 12 }}>
@@ -214,9 +217,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             
             // For daily tasks, check if completed today
             if (item.frequency === "daily") {
-              return !item.completions.some(date => 
-                format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
-              );
+              return !isCompletedToday(item.completions, today);
             }
             
             // For weekly tasks, check if completed this week
@@ -361,14 +362,12 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             // For custom frequency tasks, check if achieved
             if (item.frequency === "custom") {
               const progress = getCustomFrequencyProgress(item, today);
-              return progress.achieved;
+              return isCompletedToday(item.completions, today) || progress.achieved;
             }
             
             // For daily tasks, check if completed today
             if (item.frequency === "daily") {
-              return item.completions.some(date => 
-                format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")
-              );
+              return isCompletedToday(item.completions, today);
             }
             
             // For weekly tasks, check if completed this week
@@ -415,6 +414,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                       <Text style={{ fontWeight: "700", color: theme.textSecondary, textDecorationLine: "line-through" }}>{item.title}</Text>
                       {item.frequency === "custom" && item.customFrequency ? (() => {
                         const progress = getCustomFrequencyProgress(item, new Date());
+                        const completedToday = isCompletedToday(item.completions, new Date());
                         return (
                           <View style={{ marginTop: 8 }}>
                             <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 4 }}>
@@ -435,7 +435,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                               ))}
                             </View>
                             <Text style={{ color: theme.success, fontSize: 11, marginTop: 2 }}>
-                              {progress.achieved ? "Goal achieved! ✓" : "Progress made ✓"}
+                              {progress.achieved ? "Goal achieved! ✓" : completedToday ? "Done today ✓" : "Progress made ✓"}
                             </Text>
                           </View>
                         );
