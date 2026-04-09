@@ -19,6 +19,8 @@ type RootStackParamList = {
 type GoalProps = NativeStackScreenProps<RootStackParamList, "Goal">;
 
 export default function GoalScreen({ navigation, route }: GoalProps) {
+  const MAX_WEEKLY_CUSTOM_TARGET = 7;
+  const MAX_MONTHLY_CUSTOM_TARGET = 31;
   const { goalId } = route.params;
   const goal = useStore((s) => s.goals.find((g) => g.id === goalId)!);
   const addSubGoal = useStore((s) => s.addSubGoal);
@@ -35,6 +37,24 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
 
   const isCompletedToday = (dates: Date[], referenceDate: Date) =>
     dates.some(date => format(date, "yyyy-MM-dd") === format(referenceDate, "yyyy-MM-dd"));
+
+  const getMaxCustomTarget = (type: CustomFrequency["type"]) =>
+    type === "weekly" ? MAX_WEEKLY_CUSTOM_TARGET : MAX_MONTHLY_CUSTOM_TARGET;
+
+  const normalizeCustomTarget = (target: number, type: CustomFrequency["type"]) =>
+    Math.min(getMaxCustomTarget(type), Math.max(1, target));
+
+  const adjustCustomTarget = (delta: number) => {
+    const nextTarget = normalizeCustomTarget(customFrequency.target + delta, customFrequency.type);
+
+    if (nextTarget === customFrequency.target) {
+      void haptics.warning();
+      return;
+    }
+
+    void haptics.toggle();
+    setCustomFrequency((prev) => ({ ...prev, target: nextTarget }));
+  };
 
   const confirmDeleteTask = (taskId: string, taskTitle: string) => {
     void haptics.warning();
@@ -471,27 +491,60 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
 
               {frequency === "custom" && (
                 <View style={{ gap: 8 }}>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <TextInput
-                      placeholder="3"
-                      value={customFrequency.target.toString()}
-                      onChangeText={(text) => {
-                        const num = parseInt(text) || 1;
-                        setCustomFrequency(prev => ({ ...prev, target: Math.max(1, num) }));
+                  <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+                    <Pressable
+                      onPress={() => {
+                        adjustCustomTarget(-1);
                       }}
-                      keyboardType="numeric"
                       style={{
                         borderWidth: 1,
                         borderColor: theme.border,
                         borderRadius: 8,
                         padding: 8,
                         backgroundColor: theme.background,
-                        color: theme.text,
-                        width: 60,
-                        textAlign: "center"
+                        width: 44,
+                        height: 44,
+                        alignItems: "center",
+                        justifyContent: "center"
                       }}
-                      placeholderTextColor={theme.textSecondary}
-                    />
+                    >
+                      <Ionicons name="remove" size={18} color={theme.text} />
+                    </Pressable>
+                    <View
+                      style={{
+                        borderWidth: 1,
+                        borderColor: theme.border,
+                        borderRadius: 8,
+                        paddingHorizontal: 16,
+                        paddingVertical: 10,
+                        backgroundColor: theme.background,
+                        minWidth: 84,
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                    >
+                      <Text style={{ color: theme.text, fontWeight: "700", fontSize: 16 }}>
+                        {customFrequency.target}
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={() => {
+                        adjustCustomTarget(1);
+                      }}
+                      style={{
+                        borderWidth: 1,
+                        borderColor: theme.border,
+                        borderRadius: 8,
+                        padding: 8,
+                        backgroundColor: theme.background,
+                        width: 44,
+                        height: 44,
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                    >
+                      <Ionicons name="add" size={18} color={theme.text} />
+                    </Pressable>
                     <Text style={{ color: theme.text, alignSelf: "center" }}>times per</Text>
                   </View>
 
@@ -501,7 +554,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                         key={type}
                         onPress={() => {
                           void haptics.toggle();
-                          setCustomFrequency(prev => ({ ...prev, type }));
+                          const normalizedTarget = normalizeCustomTarget(customFrequency.target, type);
+                          setCustomFrequency(prev => ({ ...prev, type, target: normalizedTarget }));
                         }}
                         style={{
                           paddingHorizontal: 12,
@@ -546,7 +600,12 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                         goalId,
                         subTitle.trim(),
                         frequency,
-                        frequency === "custom" ? customFrequency : undefined
+                        frequency === "custom"
+                          ? {
+                              ...customFrequency,
+                              target: normalizeCustomTarget(customFrequency.target, customFrequency.type),
+                            }
+                          : undefined
                       );
                       setSubTitle("");
                       setIsEditing(false);
@@ -560,6 +619,13 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                   <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>Add</Text>
                 </Pressable>
               </View>
+              {frequency === "custom" ? (
+                <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                  {customFrequency.type === "weekly"
+                    ? `Choose from 1 to ${MAX_WEEKLY_CUSTOM_TARGET} times per week.`
+                    : `Choose from 1 to ${MAX_MONTHLY_CUSTOM_TARGET} times per month.`}
+                </Text>
+              ) : null}
             </View>
           </View>
         </Modal>
