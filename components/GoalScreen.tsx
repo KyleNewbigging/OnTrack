@@ -24,6 +24,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const { goalId } = route.params;
   const goal = useStore((s) => s.goals.find((g) => g.id === goalId)!);
   const addSubGoal = useStore((s) => s.addSubGoal);
+  const updateGoal = useStore((s) => s.updateGoal);
   const deleteSubGoal = useStore((s) => s.deleteSubGoal);
   const toggleTask = useStore((s) => s.toggleTaskCompletion);
   const { theme } = useTheme();
@@ -32,8 +33,29 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const [frequency, setFrequency] = React.useState<Frequency>("daily");
   const [customFrequency, setCustomFrequency] = React.useState<CustomFrequency>({ type: "weekly", target: 3 });
   const [isEditing, setIsEditing] = React.useState(false);
+  const [isEditingGoalTitle, setIsEditingGoalTitle] = React.useState(false);
+  const [goalTitleDraft, setGoalTitleDraft] = React.useState(goal.title);
 
   if (!goal) return <Text>Not found</Text>;
+
+  React.useEffect(() => {
+    if (!isEditingGoalTitle) {
+      setGoalTitleDraft(goal.title);
+    }
+  }, [goal.title, isEditingGoalTitle]);
+
+  const saveGoalTitle = () => {
+    const trimmedTitle = goalTitleDraft.trim();
+
+    if (!trimmedTitle) {
+      void haptics.error();
+      return;
+    }
+
+    updateGoal(goalId, { title: trimmedTitle });
+    void haptics.success();
+    setIsEditingGoalTitle(false);
+  };
 
   const isCompletedToday = (dates: Date[], referenceDate: Date) =>
     dates.some(date => format(date, "yyyy-MM-dd") === format(referenceDate, "yyyy-MM-dd"));
@@ -132,7 +154,75 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text }}>{goal.title}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          {isEditingGoalTitle ? (
+            <>
+              <TextInput
+                value={goalTitleDraft}
+                onChangeText={setGoalTitleDraft}
+                style={{
+                  flex: 1,
+                  fontSize: 22,
+                  fontWeight: "800",
+                  color: theme.text,
+                  borderWidth: 1,
+                  borderColor: theme.primary,
+                  borderRadius: 10,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  backgroundColor: theme.surface,
+                }}
+                placeholder="Goal name"
+                placeholderTextColor={theme.textSecondary}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={saveGoalTitle}
+              />
+              <Pressable
+                onPress={saveGoalTitle}
+                hitSlop={8}
+                style={{ padding: 6 }}
+              >
+                <Ionicons name="checkmark-outline" size={20} color={theme.primary} />
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  void haptics.tap();
+                  setGoalTitleDraft(goal.title);
+                  setIsEditingGoalTitle(false);
+                }}
+                hitSlop={8}
+                style={{ padding: 6 }}
+              >
+                <Ionicons name="close-outline" size={20} color={theme.textSecondary} />
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Text style={{ flex: 1, fontSize: 22, fontWeight: "800", color: theme.text }}>{goal.title}</Text>
+              <Pressable
+                onPress={() => {
+                  void haptics.tap();
+                  setGoalTitleDraft(goal.title);
+                  setIsEditingGoalTitle(true);
+                }}
+                hitSlop={8}
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 17,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: theme.surface,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                }}
+              >
+                <Ionicons name="create-outline" size={16} color={theme.textSecondary} />
+              </Pressable>
+            </>
+          )}
+        </View>
         {goal.target && <Text style={{ color: theme.textSecondary }}>Target: {goal.target}</Text>}
         <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
           <Pressable

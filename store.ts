@@ -462,6 +462,7 @@ export const getCurrentMode = () => CURRENT_MODE;
 interface State {
     goals: Goal[];
     addGoal: (title: string, target?: string) => void;
+    updateGoal: (goalId: string, updates: { title?: string; target?: string }) => void;
     addSubGoal: (goalId: string, title: string, frequency: Frequency, customFrequency?: CustomFrequency) => void;
     deleteSubGoal: (goalId: string, subGoalId: string) => void;
     toggleTaskCompletion: (goalId: string, subId: string, date?: Date) => void;
@@ -487,6 +488,18 @@ export const useStore = create<State>()(
                         ...s.goals,
                         { id: makeId(), title, target, subGoals: [], createdAt: Date.now() },
                     ],
+                })),
+            updateGoal: (goalId, updates) =>
+                set((s) => ({
+                    goals: s.goals.map((g) =>
+                        g.id === goalId
+                            ? {
+                                ...g,
+                                title: updates.title ?? g.title,
+                                target: updates.target !== undefined ? updates.target : g.target,
+                            }
+                            : g
+                    ),
                 })),
             addSubGoal: (goalId, title, frequency, customFrequency) =>
                 set((s) => ({
