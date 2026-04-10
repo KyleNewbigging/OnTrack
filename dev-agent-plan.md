@@ -1,18 +1,21 @@
-# OnTrack Daily Dev Agent Plan
+# OnTrack Dev Agent Plan
 
-This repo is intended to be worked by a daily automated agent.
+This repo is currently worked by an on-demand dev agent ("Bob").
 
-## Goal
-Once per day, the agent should:
-1. Check `TODO.md` for unchecked items.
-2. Check GitHub open issues.
-3. If neither source has actionable work, exit without changes.
-4. Otherwise pick one small, self-contained item.
-5. Implement the fix/feature.
-6. Run lightweight validation if available.
-7. Commit changes on a branch.
-8. Push the branch.
-9. Open a PR for review.
+## Current workflow
+Bob is triggered by a user message, not by a daily scheduler.
+
+Typical flow:
+1. User asks Bob to work on OnTrack.
+2. Bob checks `TODO.md` for unchecked items.
+3. Bob checks GitHub open issues.
+4. If neither source has actionable work, Bob does nothing.
+5. Otherwise Bob picks one small, self-contained item.
+6. Bob implements the change.
+7. Bob runs lightweight validation if available.
+8. Bob commits changes on a branch.
+9. Bob pushes the branch and opens a PR for review.
+10. Bob addresses review feedback and updates the PR when asked.
 
 ## Prioritization
 - Prefer GitHub issues first if any are open.
@@ -21,12 +24,13 @@ Once per day, the agent should:
 - Skip tasks that would require secrets, paid services, app store access, or major product decisions.
 
 ## Constraints
-- Keep changes small enough to review in one PR.
+- Keep changes small and reviewable.
 - Do not force-merge or auto-merge.
 - Do not close issues automatically unless clearly fixed and referenced.
 - If validation fails and the agent cannot resolve it safely, do not open a PR.
+- Keep replies short by default unless the user asks for more detail.
 
 ## Notes
-- Current repo has no open GitHub issues as of setup time.
-- `TODO.md` currently contains actionable unchecked items.
-- Current remote is HTTPS. For automated push/PR to work, the runtime will need GitHub auth configured (e.g. `gh auth login` or a usable git credential helper/token).
+- Current remote is HTTPS.
+- GitHub auth is expected to be available for push/PR actions.
+- A proper scheduled/cron workflow may be added later once the OpenClaw gateway cron/pairing issue is resolved. When that is working, this plan can be extended to follow the original daily automation model.

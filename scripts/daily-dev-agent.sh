@@ -14,15 +14,6 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 
-mkdir -p .dev-agent
-STAMP_FILE=".dev-agent/last-run.txt"
-DATE_UTC="$(date -u +%F)"
-
-if [[ -f "$STAMP_FILE" ]] && grep -qx "$DATE_UTC" "$STAMP_FILE"; then
-  echo "Already ran today ($DATE_UTC)."
-  exit 0
-fi
-
 echo "Fetching latest main..."
 git fetch origin main --quiet
 git checkout main >/dev/null 2>&1 || true
@@ -42,19 +33,16 @@ ISSUE_NUMBER="$(node -e 'const fs=require("fs"); const s=fs.readFileSync(0,"utf8
 
 if [[ -z "$TODO_CANDIDATE" && "$ISSUE_COUNT" == "0" ]]; then
   echo "No open TODO items and no GitHub issues. Nothing to do."
-  printf '%s\n' "$DATE_UTC" > "$STAMP_FILE"
   exit 0
 fi
 
-cat <<EOF
+cat <<EOM
 Work is available.
 - First open issue: ${ISSUE_NUMBER:-none} ${ISSUE_TITLE:-}
 - First TODO item: ${TODO_CANDIDATE:-none}
-EOF
+EOM
 
-cat <<'EOF'
-This script is a lightweight preflight only.
-The actual implementation / commit / PR flow is handled by the daily OpenClaw agentTurn cron job.
-EOF
-
-printf '%s\n' "$DATE_UTC" > "$STAMP_FILE"
+cat <<'EOM'
+This script is a lightweight preflight for the current on-demand Bob workflow.
+It can still be reused later if scheduled automation is set up properly.
+EOM
