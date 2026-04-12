@@ -58,15 +58,15 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
   
   // Calculate historical completion percentage for each goal
   const goalData = goals.map((goal) => {
-    if (goal.subGoals.length === 0) {
+    if (goal.tasks.length === 0) {
       return { title: goal.title, percentage: 0 };
     }
     
     // Calculate average completion rate across all tasks in this goal
     let totalCompletionRate = 0;
     
-    goal.subGoals.forEach((subGoal) => {
-      if (subGoal.completions.length === 0) {
+    goal.tasks.forEach((task) => {
+      if (task.completions.length === 0) {
         // No completions yet, 0% rate
         totalCompletionRate += 0;
       } else {
@@ -77,21 +77,21 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
         
         // Calculate completion rate based on frequency
         let expectedCompletions;
-        if (subGoal.frequency === 'daily') {
+        if (task.frequency === 'daily') {
           expectedCompletions = daysSinceCreation;
-        } else if (subGoal.frequency === 'weekly') {
+        } else if (task.frequency === 'weekly') {
           expectedCompletions = Math.ceil(daysSinceCreation / 7);
         } else { // 'once'
           expectedCompletions = 1;
         }
         
         // Calculate actual completion rate (cap at 100%)
-        const completionRate = Math.min(1.0, subGoal.completions.length / expectedCompletions);
+        const completionRate = Math.min(1.0, task.completions.length / expectedCompletions);
         totalCompletionRate += completionRate;
       }
     });
     
-    const percentage = totalCompletionRate / goal.subGoals.length;
+    const percentage = totalCompletionRate / goal.tasks.length;
     return { title: goal.title, percentage };
   });
 

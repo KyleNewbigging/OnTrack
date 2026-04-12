@@ -87,7 +87,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
                   >
                     <Text style={{ fontSize: 16, fontWeight: "700", color: theme.text }}>{goal.title}</Text>
                     {goal.target && <Text style={{ color: theme.textSecondary }}>Target: {goal.target}</Text>}
-                    <Text style={{ color: theme.textSecondary }}>Sub-goals: {goal.subGoals.length}</Text>
+                    <Text style={{ color: theme.textSecondary }}>Tasks: {goal.tasks.length}</Text>
                   </Pressable>
 
                   <Pressable
@@ -95,7 +95,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
                       void haptics.warning();
                       Alert.alert(
                         "Delete goal?",
-                        `This will remove "${goal.title}" and all its sub-goals.`,
+                        `This will remove "${goal.title}" and all its tasks.`,
                         [
                           { text: "Cancel", style: "cancel" },
                           {

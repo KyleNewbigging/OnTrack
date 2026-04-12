@@ -49,7 +49,7 @@ export default function OverviewScreen({ navigation, route }: OverviewProps) {
         </View>
 
         <FlatList
-          data={goal.subGoals}
+          data={goal.tasks}
           keyExtractor={(task) => task.id}
           ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
           renderItem={({ item: task }) => (

@@ -107,8 +107,8 @@ The app uses **Zustand** for state management with persistence:
 interface State {
   goals: Goal[];                    // Array of user goals
   addGoal: (title, target?) => void;        // Create new goal
-  addSubGoal: (goalId, title, frequency) => void; // Add task to goal
-  toggleTaskCompletion: (goalId, subId, date?) => void; // Mark task complete/incomplete
+  addTask: (goalId, title, frequency) => void; // Add task to goal
+  toggleTaskCompletion: (goalId, taskId, date?) => void; // Mark task complete/incomplete
   completionsByDate: () => Record<string, number>; // Aggregate completion data
   deleteGoal: (goalId) => void;            // Remove goal and all data
 }
@@ -122,11 +122,11 @@ export interface Goal {
   id: string;           // Unique identifier
   title: string;        // Goal name
   target?: string;      // Optional target description
-  subGoals: SubGoal[];  // Array of tasks
+  tasks: Task[];        // Array of tasks
   createdAt: number;    // Creation timestamp
 }
 
-export interface SubGoal {
+export interface Task {
   id: string;              // Unique identifier
   title: string;           // Task name
   frequency: Frequency;    // "daily" | "weekly" | "once"

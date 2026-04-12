@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { Goal, Frequency, CustomFrequency, SubGoal } from "./types";
+import { Goal, Frequency, CustomFrequency, Task } from "./types";
 import { format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 
 // Date utility functions
@@ -10,8 +10,29 @@ const dateToKey = (date: Date): string => format(normalizeDate(date), "yyyy-MM-d
 const isSameDay = (date1: Date, date2: Date): boolean => 
   dateToKey(date1) === dateToKey(date2);
 
+type PersistedTask = Omit<Task, "completions"> & {
+  completions?: Array<Date | string>;
+};
+
+type PersistedGoal = Omit<Goal, "tasks"> & {
+  tasks?: PersistedTask[];
+  subGoals?: PersistedTask[];
+};
+
+const normalizeTask = (task: PersistedTask): Task => ({
+  ...task,
+  completions: task.completions?.map((completion) =>
+    typeof completion === "string" ? new Date(completion) : completion
+  ) || [],
+});
+
+const normalizeGoal = (goal: PersistedGoal): Goal => ({
+  ...goal,
+  tasks: (goal.tasks ?? goal.subGoals ?? []).map(normalizeTask),
+});
+
 // Helper functions for custom frequency calculations
-export const getCustomFrequencyProgress = (task: SubGoal, referenceDate: Date = new Date()) => {
+export const getCustomFrequencyProgress = (task: Task, referenceDate: Date = new Date()) => {
   if (task.frequency !== "custom" || !task.customFrequency) {
     return { completed: 0, target: 0, achieved: false };
   }
@@ -39,7 +60,7 @@ export const getCustomFrequencyProgress = (task: SubGoal, referenceDate: Date = 
   return { completed, target, achieved, periodStart, periodEnd };
 };
 
-export const shouldShowCustomTask = (task: SubGoal, referenceDate: Date = new Date()): boolean => {
+export const shouldShowCustomTask = (task: Task, referenceDate: Date = new Date()): boolean => {
   if (task.frequency !== "custom") return true;
   
   const completedToday = task.completions.some(date => isSameDay(date, referenceDate));
@@ -48,7 +69,7 @@ export const shouldShowCustomTask = (task: SubGoal, referenceDate: Date = new Da
 };
 
 // Helper to calculate streak for any goal type
-export const getGoalStreak = (task: SubGoal): number => {
+export const getGoalStreak = (task: Task): number => {
   let streak = 0;
   let currentDate = new Date();
   
@@ -142,7 +163,7 @@ export const getGoalStreak = (task: SubGoal): number => {
 };
 
 // Helper to get all achieved goal periods for heatmap indicators
-export const getAchievedGoalPeriods = (task: SubGoal): Array<{ start: Date; end: Date; type: "weekly" | "monthly" }> => {
+export const getAchievedGoalPeriods = (task: Task): Array<{ start: Date; end: Date; type: "weekly" | "monthly" }> => {
   if (task.frequency !== "custom" || !task.customFrequency) return [];
   
   const achievements: Array<{ start: Date; end: Date; type: "weekly" | "monthly" }> = [];
@@ -220,7 +241,7 @@ export const debugAsyncStorage = async () => {
                     
                     // Show sample of each goal
                     parsed.goals?.forEach((goal: any, index: number) => {
-                        console.log(`  Goal ${index + 1}: ${goal.title} (${goal.subGoals?.length || 0} tasks)`);
+                        console.log(`  Goal ${index + 1}: ${goal.title} (${goal.tasks?.length || goal.subGoals?.length || 0} tasks)`);
                     });
                 } else {
                     console.log("No data found");
@@ -253,7 +274,7 @@ function getSampleGoals(): Goal[] {
             title: "Fitness Journey",
             target: "Get in shape",
             createdAt: Date.now() - (90 * 24 * 60 * 60 * 1000), // 90 days ago
-            subGoals: [
+            tasks: [
                 {
                     id: makeId(),
                     title: "Morning workout",
@@ -333,7 +354,7 @@ function getSampleGoals(): Goal[] {
             title: "Learning Spanish",
             target: "Conversational fluency",
             createdAt: Date.now() - (75 * 24 * 60 * 60 * 1000), // 75 days ago
-            subGoals: [
+            tasks: [
                 {
                     id: makeId(),
                     title: "Duolingo practice",
@@ -376,7 +397,7 @@ function getSampleGoals(): Goal[] {
             title: "Healthy Habits",
             target: "Better lifestyle",
             createdAt: Date.now() - (60 * 24 * 60 * 60 * 1000), // 60 days ago
-            subGoals: [
+            tasks: [
                 {
                     id: makeId(),
                     title: "Drink 8 glasses of water",
@@ -408,7 +429,7 @@ function getSampleGoals(): Goal[] {
             title: "Side Project",
             target: "Launch mobile app",
             createdAt: Date.now() - (45 * 24 * 60 * 60 * 1000), // 45 days ago
-            subGoals: [
+            tasks: [
                 {
                     id: makeId(),
                     title: "Code for 2 hours",
@@ -465,9 +486,9 @@ interface State {
     addGoal: (title: string, target?: string) => void;
     setSelectedDate: (date: Date) => void;
     updateGoal: (goalId: string, updates: { title?: string; target?: string }) => void;
-    addSubGoal: (goalId: string, title: string, frequency: Frequency, customFrequency?: CustomFrequency) => void;
-    deleteSubGoal: (goalId: string, subGoalId: string) => void;
-    toggleTaskCompletion: (goalId: string, subId: string, date?: Date) => void;
+    addTask: (goalId: string, title: string, frequency: Frequency, customFrequency?: CustomFrequency) => void;
+    deleteTask: (goalId: string, taskId: string) => void;
+    toggleTaskCompletion: (goalId: string, taskId: string, date?: Date) => void;
     completionsByDate: () => Record<string, number>;
     deleteGoal: (goalId: string) => void;
     resetAppData: () => void;
@@ -489,7 +510,7 @@ export const useStore = create<State>()(
                 set((s) => ({
                     goals: [
                         ...s.goals,
-                        { id: makeId(), title, target, subGoals: [], createdAt: Date.now() },
+                        { id: makeId(), title, target, tasks: [], createdAt: Date.now() },
                     ],
                 })),
             setSelectedDate: (date) =>
@@ -508,14 +529,14 @@ export const useStore = create<State>()(
                             : g
                     ),
                 })),
-            addSubGoal: (goalId, title, frequency, customFrequency) =>
+            addTask: (goalId, title, frequency, customFrequency) =>
                 set((s) => ({
                     goals: s.goals.map((g) =>
                         g.id === goalId
                             ? {
                                 ...g,
-                                subGoals: [
-                                    ...g.subGoals,
+                                tasks: [
+                                    ...g.tasks,
                                     { 
                                         id: makeId(), 
                                         title, 
@@ -528,18 +549,18 @@ export const useStore = create<State>()(
                             : g
                     ),
                 })),
-            deleteSubGoal: (goalId, subGoalId) =>
+            deleteTask: (goalId, taskId) =>
                 set((s) => ({
                     goals: s.goals.map((g) =>
                         g.id === goalId
                             ? {
                                 ...g,
-                                subGoals: g.subGoals.filter((subGoal) => subGoal.id !== subGoalId),
+                                tasks: g.tasks.filter((task) => task.id !== taskId),
                             }
                             : g
                     ),
                 })),
-            toggleTaskCompletion: (goalId, subId, date = new Date()) =>
+            toggleTaskCompletion: (goalId, taskId, date = new Date()) =>
                 set((s) => {
                     const normalizedDate = normalizeDate(date);
                     return {
@@ -547,8 +568,8 @@ export const useStore = create<State>()(
                             if (g.id !== goalId) return g;
                             return {
                                 ...g,
-                                subGoals: g.subGoals.map((t) => {
-                                    if (t.id !== subId) return t;
+                                tasks: g.tasks.map((t) => {
+                                    if (t.id !== taskId) return t;
 
                                     if (t.frequency === "once") {
                                         return {
@@ -574,7 +595,7 @@ export const useStore = create<State>()(
             completionsByDate: () => {
                 const map: Record<string, number> = {};
                 for (const g of get().goals) {
-                    for (const t of g.subGoals) {
+                    for (const t of g.tasks) {
                         // Skip "once" frequency tasks - they shouldn't appear in heatmaps
                         if (t.frequency === "once") continue;
                         
@@ -605,15 +626,7 @@ export const useStore = create<State>()(
             onRehydrateStorage: () => {
                 return (state) => {
                     if (state?.goals) {
-                        state.goals = state.goals.map(goal => ({
-                            ...goal,
-                            subGoals: goal.subGoals?.map(subGoal => ({
-                                ...subGoal,
-                                completions: subGoal.completions?.map(completion => 
-                                    typeof completion === 'string' ? new Date(completion) : completion
-                                ) || []
-                            })) || []
-                        }));
+                        state.goals = state.goals.map((goal) => normalizeGoal(goal as PersistedGoal));
                     }
 
                     if (state?.selectedDate) {

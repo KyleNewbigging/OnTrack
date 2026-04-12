@@ -7,14 +7,14 @@ Use ✅ when done, keep lines short and actionable.
 
 ## MVP (Now)
 - [x] Create goal (title + optional target)
-- [x] View goal details (sub-goals list, frequency)
-- [x] Add sub-goal/task (title + frequency: once/daily/weekly)
+- [x] View goal details (task list, frequency)
+- [x] Add task (title + frequency: once/daily/weekly)
 - [x] Toggle “done today” for tasks
 - [x] Delete goal (red pill button + confirm dialog) ✅ in progress
 - [x] Persist state with AsyncStorage
 - [x] Input labels for clarity
-- [x] Handle empty states (no goals, no sub-goals)
-- [x] Delete sub-goal/task
+- [x] Handle empty states (no goals, no tasks)
+- [x] Delete task
 - [ ] Consistency heatmap (aggregate completions per day)
 
 ---
@@ -33,7 +33,7 @@ Use ✅ when done, keep lines short and actionable.
 
 ## Notifications (Later)
 - [ ] Procrastination prevention notifications (not done then keep sending, user determined frequency)
-- [ ] Daily reminders per sub-goal (e.g., remind at 8:00 PM)
+- [ ] Daily reminders per task (e.g., remind at 8:00 PM)
 - [ ] Quiet hours (don’t ping after certain time)
 
 ---

@@ -5,7 +5,7 @@ export interface CustomFrequency {
   target: number; // e.g., 3 times per week, 5 times per month
 }
 
-export interface SubGoal {
+export interface Task {
   id: string;
   title: string;
   frequency: Frequency;
@@ -17,6 +17,6 @@ export interface Goal {
   id: string;
   title: string;
   target?: string;
-  subGoals: SubGoal[];
+  tasks: Task[];
   createdAt: number;
 }

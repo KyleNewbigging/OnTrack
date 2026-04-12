@@ -24,13 +24,13 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const { goalId } = route.params;
   const goal = useStore((s) => s.goals.find((g) => g.id === goalId)!);
   const selectedDate = useStore((s) => s.selectedDate);
-  const addSubGoal = useStore((s) => s.addSubGoal);
+  const addTask = useStore((s) => s.addTask);
   const updateGoal = useStore((s) => s.updateGoal);
-  const deleteSubGoal = useStore((s) => s.deleteSubGoal);
+  const deleteTask = useStore((s) => s.deleteTask);
   const toggleTask = useStore((s) => s.toggleTaskCompletion);
   const { theme } = useTheme();
 
-  const [subTitle, setSubTitle] = React.useState("");
+  const [taskTitle, setTaskTitle] = React.useState("");
   const [frequency, setFrequency] = React.useState<Frequency>("daily");
   const [customFrequency, setCustomFrequency] = React.useState<CustomFrequency>({ type: "weekly", target: 3 });
   const [isEditing, setIsEditing] = React.useState(false);
@@ -91,7 +91,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
           style: "destructive",
           onPress: () => {
             void haptics.destructive();
-            deleteSubGoal(goalId, taskId);
+            deleteTask(goalId, taskId);
           }
         }
       ]
@@ -114,7 +114,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
     return viewingToday ? "this month" : format(selectedDate, "MMMM yyyy");
   };
 
-  const pendingTasks = goal.subGoals.filter(item => {
+  const pendingTasks = goal.tasks.filter(item => {
     if (item.frequency === "custom") {
       return shouldShowCustomTask(item, selectedDate);
     }
@@ -136,7 +136,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
     return true;
   });
 
-  const completedTasks = goal.subGoals.filter(item => {
+  const completedTasks = goal.tasks.filter(item => {
     if (item.frequency === "custom") {
       const progress = getCustomFrequencyProgress(item, selectedDate);
       return isCompletedToday(item.completions, selectedDate) || progress.achieved;
@@ -567,8 +567,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               <Text style={{ fontWeight: "700", fontSize: 18, color: theme.text }}>New Task</Text>
               <TextInput
                 placeholder="e.g., Take creatine"
-                value={subTitle}
-                onChangeText={setSubTitle}
+                value={taskTitle}
+                onChangeText={setTaskTitle}
                 style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 8, padding: 10, backgroundColor: theme.background, color: theme.text }}
                 placeholderTextColor={theme.textSecondary}
                 autoFocus={true}
@@ -700,11 +700,11 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 </Pressable>
                 <Pressable
                   onPress={() => {
-                    if (subTitle.trim()) {
+                    if (taskTitle.trim()) {
                       void haptics.success();
-                      addSubGoal(
+                      addTask(
                         goalId,
-                        subTitle.trim(),
+                        taskTitle.trim(),
                         frequency,
                         frequency === "custom"
                           ? {
@@ -713,7 +713,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                             }
                           : undefined
                       );
-                      setSubTitle("");
+                      setTaskTitle("");
                       setIsEditing(false);
                       return;
                     }
