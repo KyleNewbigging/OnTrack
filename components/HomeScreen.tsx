@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useStore, debugAsyncStorage, getCurrentMode } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import RadarChart from "./RadarChart";
+import DateContextCard from "./DateContextCard";
+import CalendarModal from "./CalendarModal";
 import { haptics } from "../utils/haptics";
 
 type RootStackParamList = {
@@ -20,11 +22,14 @@ type HomeProps = NativeStackScreenProps<RootStackParamList, "Home">;
 
 export default function HomeScreen({ navigation }: HomeProps) {
   const goals = useStore((s) => s.goals);
+  const selectedDate = useStore((s) => s.selectedDate);
+  const setSelectedDate = useStore((s) => s.setSelectedDate);
   const resetAppData = useStore((s) => s.resetAppData);
   const deleteGoal = useStore((s) => s.deleteGoal);
   const currentMode = getCurrentMode();
   const { theme, isDark, toggleTheme, resetThemePreference } = useTheme();
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [calendarVisible, setCalendarVisible] = useState(false);
   const isDevToolsVisible = currentMode === "DEV";
 
   useLayoutEffect(() => {
@@ -47,6 +52,14 @@ export default function HomeScreen({ navigation }: HomeProps) {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
       <ScrollView style={{ flex: 1, backgroundColor: theme.background }} showsVerticalScrollIndicator={false}>
         <View style={{ padding: 16, gap: 12 }}>
+          <DateContextCard
+            selectedDate={selectedDate}
+            onPress={() => {
+              void haptics.tap();
+              setCalendarVisible(true);
+            }}
+          />
+
           <Text style={{ fontSize: 18, fontWeight: "700", color: theme.text }}>Consistency Overview</Text>
           <RadarChart goals={goals} size={250} />
 
@@ -293,6 +306,13 @@ export default function HomeScreen({ navigation }: HomeProps) {
           </View>
         </View>
       </Modal>
+
+      <CalendarModal
+        visible={calendarVisible}
+        selectedDate={selectedDate}
+        onClose={() => setCalendarVisible(false)}
+        onSelectDate={(date) => setSelectedDate(date)}
+      />
     </SafeAreaView>
   );
 }

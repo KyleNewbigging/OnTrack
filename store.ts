@@ -461,7 +461,9 @@ export const getCurrentMode = () => CURRENT_MODE;
 
 interface State {
     goals: Goal[];
+    selectedDate: Date;
     addGoal: (title: string, target?: string) => void;
+    setSelectedDate: (date: Date) => void;
     updateGoal: (goalId: string, updates: { title?: string; target?: string }) => void;
     addSubGoal: (goalId: string, title: string, frequency: Frequency, customFrequency?: CustomFrequency) => void;
     deleteSubGoal: (goalId: string, subGoalId: string) => void;
@@ -481,6 +483,7 @@ export const useStore = create<State>()(
     persist(
         (set, get) => ({
             goals: getInitialGoals(), // Dynamic initialization based on store mode
+            selectedDate: normalizeDate(new Date()),
 
             addGoal: (title, target) =>
                 set((s) => ({
@@ -489,6 +492,10 @@ export const useStore = create<State>()(
                         { id: makeId(), title, target, subGoals: [], createdAt: Date.now() },
                     ],
                 })),
+            setSelectedDate: (date) =>
+                set({
+                    selectedDate: normalizeDate(date),
+                }),
             updateGoal: (goalId, updates) =>
                 set((s) => ({
                     goals: s.goals.map((g) =>
@@ -542,6 +549,14 @@ export const useStore = create<State>()(
                                 ...g,
                                 subGoals: g.subGoals.map((t) => {
                                     if (t.id !== subId) return t;
+
+                                    if (t.frequency === "once") {
+                                        return {
+                                            ...t,
+                                            completions: t.completions.length > 0 ? [] : [normalizedDate],
+                                        };
+                                    }
+
                                     const hasCompletion = t.completions.some(completionDate => 
                                         isSameDay(completionDate, normalizedDate)
                                     );
@@ -579,6 +594,7 @@ export const useStore = create<State>()(
             resetAppData: () => {
                 set({
                     goals: getInitialGoals(),
+                    selectedDate: normalizeDate(new Date()),
                 });
             },
         }),
@@ -598,6 +614,14 @@ export const useStore = create<State>()(
                                 ) || []
                             })) || []
                         }));
+                    }
+
+                    if (state?.selectedDate) {
+                        state.selectedDate = typeof state.selectedDate === "string"
+                            ? new Date(state.selectedDate)
+                            : state.selectedDate;
+                    } else if (state) {
+                        state.selectedDate = normalizeDate(new Date());
                     }
                 };
             },

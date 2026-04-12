@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useStore, getCustomFrequencyProgress, shouldShowCustomTask } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
-import { format, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
+import { format, startOfWeek, endOfWeek, isWithinInterval, isToday } from "date-fns";
 import { Frequency, CustomFrequency } from "../types";
 import { haptics } from "../utils/haptics";
 
@@ -23,6 +23,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const MAX_MONTHLY_CUSTOM_TARGET = 31;
   const { goalId } = route.params;
   const goal = useStore((s) => s.goals.find((g) => g.id === goalId)!);
+  const selectedDate = useStore((s) => s.selectedDate);
   const addSubGoal = useStore((s) => s.addSubGoal);
   const updateGoal = useStore((s) => s.updateGoal);
   const deleteSubGoal = useStore((s) => s.deleteSubGoal);
@@ -97,21 +98,34 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
     );
   };
 
-  const today = new Date();
+  const viewingToday = isToday(selectedDate);
+  const selectedWeekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
+  const selectedWeekEnd = endOfWeek(selectedDate, { weekStartsOn: 0 });
+  const selectedDayLabel = viewingToday ? "today" : format(selectedDate, "MMM d");
+  const incompleteDailyLabel = viewingToday ? "Done today: No" : `Done on ${selectedDayLabel}: No`;
+  const completedDailyLabel = viewingToday ? "Done today: Yes ✓" : `Done on ${selectedDayLabel}: Yes ✓`;
+  const customCompletionLabel = viewingToday ? "Done today ✓" : `Done on ${selectedDayLabel} ✓`;
+  const weeklyContextLabel = `week of ${format(selectedWeekStart, "MMM d")}`;
+  const getCustomPeriodLabel = (type: CustomFrequency["type"]) => {
+    if (type === "weekly") {
+      return viewingToday ? "this week" : weeklyContextLabel;
+    }
+
+    return viewingToday ? "this month" : format(selectedDate, "MMMM yyyy");
+  };
+
   const pendingTasks = goal.subGoals.filter(item => {
     if (item.frequency === "custom") {
-      return shouldShowCustomTask(item, today);
+      return shouldShowCustomTask(item, selectedDate);
     }
 
     if (item.frequency === "daily") {
-      return !isCompletedToday(item.completions, today);
+      return !isCompletedToday(item.completions, selectedDate);
     }
 
     if (item.frequency === "weekly") {
-      const weekStart = startOfWeek(today, { weekStartsOn: 0 });
-      const weekEnd = endOfWeek(today, { weekStartsOn: 0 });
       return !item.completions.some(date =>
-        isWithinInterval(date, { start: weekStart, end: weekEnd })
+        isWithinInterval(date, { start: selectedWeekStart, end: selectedWeekEnd })
       );
     }
 
@@ -124,19 +138,17 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
 
   const completedTasks = goal.subGoals.filter(item => {
     if (item.frequency === "custom") {
-      const progress = getCustomFrequencyProgress(item, today);
-      return isCompletedToday(item.completions, today) || progress.achieved;
+      const progress = getCustomFrequencyProgress(item, selectedDate);
+      return isCompletedToday(item.completions, selectedDate) || progress.achieved;
     }
 
     if (item.frequency === "daily") {
-      return isCompletedToday(item.completions, today);
+      return isCompletedToday(item.completions, selectedDate);
     }
 
     if (item.frequency === "weekly") {
-      const weekStart = startOfWeek(today, { weekStartsOn: 0 });
-      const weekEnd = endOfWeek(today, { weekStartsOn: 0 });
       return item.completions.some(date =>
-        isWithinInterval(date, { start: weekStart, end: weekEnd })
+        isWithinInterval(date, { start: selectedWeekStart, end: selectedWeekEnd })
       );
     }
 
@@ -272,10 +284,12 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             marginTop: 8
           }}>
             <Text style={{ fontWeight: "700", fontSize: 18, color: theme.success, marginBottom: 4 }}>
-              All done for today!
+              {viewingToday ? "All done for today!" : `All done for ${selectedDayLabel}!`}
             </Text>
             <Text style={{ color: theme.success, textAlign: "center" }}>
-              You're right on track! All tasks completed.
+              {viewingToday
+                ? "You're right on track! All tasks completed."
+                : `All tasks completed for ${format(selectedDate, "EEEE, MMM d, yyyy")}.`}
             </Text>
           </View>
         ) : (
@@ -284,7 +298,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               <Pressable
                 onPress={() => {
                   void haptics.success();
-                  toggleTask(goalId, item.id);
+                  toggleTask(goalId, item.id, selectedDate);
                 }}
                 style={{
                   padding: 12,
@@ -298,11 +312,11 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                   <View style={{ flex: 1, paddingRight: 12 }}>
                     <Text style={{ fontWeight: "700", color: theme.text }}>{item.title}</Text>
                     {item.frequency === "custom" && item.customFrequency ? (() => {
-                      const progress = getCustomFrequencyProgress(item, new Date());
+                      const progress = getCustomFrequencyProgress(item, selectedDate);
                       return (
                         <View style={{ marginTop: 8 }}>
                           <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 4 }}>
-                            {progress.completed}/{progress.target} times this {item.customFrequency.type.slice(0, -2)}
+                            {progress.completed}/{progress.target} times in {getCustomPeriodLabel(item.customFrequency.type)}
                           </Text>
                           <View style={{ flexDirection: "row", gap: 2 }}>
                             {Array.from({ length: progress.target }, (_, progressIndex) => (
@@ -326,16 +340,14 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                       );
                     })() : (() => {
                       if (item.frequency === "weekly") {
-                        const weekStart = startOfWeek(today, { weekStartsOn: 0 });
-                        const weekEnd = endOfWeek(today, { weekStartsOn: 0 });
                         const completedThisWeek = item.completions.some(date =>
-                          isWithinInterval(date, { start: weekStart, end: weekEnd })
+                          isWithinInterval(date, { start: selectedWeekStart, end: selectedWeekEnd })
                         );
                         return (
                           <>
                             <Text style={{ color: theme.textSecondary }}>Frequency: Weekly</Text>
                             <Text style={{ color: theme.textSecondary }}>
-                              Done this week: {completedThisWeek ? "Yes" : "No"}
+                              Done for {weeklyContextLabel}: {completedThisWeek ? "Yes" : "No"}
                             </Text>
                           </>
                         );
@@ -343,7 +355,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                         return (
                           <>
                             <Text style={{ color: theme.textSecondary }}>Frequency: Daily</Text>
-                            <Text style={{ color: theme.textSecondary }}>Done today: No</Text>
+                            <Text style={{ color: theme.textSecondary }}>{incompleteDailyLabel}</Text>
                           </>
                         );
                       } else if (item.frequency === "once") {
@@ -391,7 +403,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 <Pressable
                   onPress={() => {
                     void haptics.tap();
-                    toggleTask(goalId, item.id);
+                    toggleTask(goalId, item.id, selectedDate);
                   }}
                   style={{
                     padding: 12,
@@ -406,12 +418,12 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                     <View style={{ flex: 1, paddingRight: 12 }}>
                       <Text style={{ fontWeight: "700", color: theme.textSecondary, textDecorationLine: "line-through" }}>{item.title}</Text>
                       {item.frequency === "custom" && item.customFrequency ? (() => {
-                        const progress = getCustomFrequencyProgress(item, new Date());
-                        const completedToday = isCompletedToday(item.completions, new Date());
+                        const progress = getCustomFrequencyProgress(item, selectedDate);
+                        const completedOnSelectedDate = isCompletedToday(item.completions, selectedDate);
                         return (
                           <View style={{ marginTop: 8 }}>
                             <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 4 }}>
-                              {progress.completed}/{progress.target} times this {item.customFrequency.type.slice(0, -2)}
+                              {progress.completed}/{progress.target} times in {getCustomPeriodLabel(item.customFrequency.type)}
                             </Text>
                             <View style={{ flexDirection: "row", gap: 2 }}>
                               {Array.from({ length: progress.target }, (_, progressIndex) => (
@@ -427,7 +439,11 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                               ))}
                             </View>
                             <Text style={{ color: theme.success, fontSize: 11, marginTop: 2 }}>
-                              {progress.achieved ? "Goal achieved! ✓" : completedToday ? "Done today ✓" : "Progress made ✓"}
+                              {progress.achieved
+                                ? "Goal achieved! ✓"
+                                : completedOnSelectedDate
+                                  ? customCompletionLabel
+                                  : "Progress made ✓"}
                             </Text>
                           </View>
                         );
@@ -436,14 +452,14 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                           return (
                             <>
                               <Text style={{ color: theme.textSecondary }}>Frequency: Weekly</Text>
-                              <Text style={{ color: theme.success }}>Done this week: Yes ✓</Text>
+                              <Text style={{ color: theme.success }}>Done for {weeklyContextLabel}: Yes ✓</Text>
                             </>
                           );
                         } else if (item.frequency === "daily") {
                           return (
                             <>
                               <Text style={{ color: theme.textSecondary }}>Frequency: Daily</Text>
-                              <Text style={{ color: theme.success }}>Done today: Yes ✓</Text>
+                              <Text style={{ color: theme.success }}>{completedDailyLabel}</Text>
                             </>
                           );
                         } else if (item.frequency === "once") {
@@ -719,6 +735,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             </View>
           </View>
         </Modal>
+
       </ScrollView>
     </SafeAreaView>
   );
