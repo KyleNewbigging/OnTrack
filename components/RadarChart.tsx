@@ -16,17 +16,26 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
   if (goals.length === 0) {
     return (
       <View style={{ 
-        width: size, 
-        height: size, 
-        justifyContent: "center", 
-        alignItems: "center",
         borderWidth: 1,
         borderColor: theme.border,
         borderRadius: 10,
-        backgroundColor: theme.surface
+        padding: 16,
+        backgroundColor: theme.surface,
+        alignItems: "center"
       }}>
-        <Text style={{ color: theme.textSecondary, fontSize: 14 }}>No goals yet</Text>
-        <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Create goals to see radar chart</Text>
+        <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 12, color: theme.text }}>
+          Goal Consistency Overview
+        </Text>
+
+        <View style={{ 
+          width: size, 
+          height: size, 
+          justifyContent: "center", 
+          alignItems: "center",
+        }}>
+          <Text style={{ color: theme.textSecondary, fontSize: 14 }}>No goals yet</Text>
+          <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Create goals to see radar chart</Text>
+        </View>
       </View>
     );
   }
