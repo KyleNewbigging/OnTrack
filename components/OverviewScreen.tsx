@@ -40,17 +40,34 @@ export default function OverviewScreen({ navigation, route }: OverviewProps) {
   };
 
   const recurringTasks = goal.tasks.filter((task) => task.frequency !== "once");
-  const oneOffTasks = goal.tasks.filter((task) => task.frequency === "once");
-  const oneOffCompletions = oneOffTasks.flatMap((task) => task.completions);
-  const oneOffTaskNames = oneOffTasks.map((task) => task.title).join(", ");
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 28 }} showsVerticalScrollIndicator={false}>
         <View>
           <Text style={{ fontSize: 22, fontWeight: "800", color: theme.text }}>{goal.title} - Consistency</Text>
-          <Text style={{ color: theme.textSecondary, marginTop: 4 }}>Task completion heatmaps</Text>
+          <Text style={{ color: theme.textSecondary, marginTop: 4 }}>
+            Recurring task heatmaps and streaks
+          </Text>
         </View>
+
+        {recurringTasks.length === 0 ? (
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: theme.border,
+              borderRadius: 10,
+              padding: 14,
+              backgroundColor: theme.surface,
+              gap: 8,
+            }}
+          >
+            <Text style={{ fontSize: 16, fontWeight: "700", color: theme.text }}>No recurring tasks yet</Text>
+            <Text style={{ color: theme.textSecondary, lineHeight: 22 }}>
+              Consistency charts only apply to daily, weekly, and custom tasks. One-off tasks are treated as one-and-done, so they do not appear in heatmaps or streak views.
+            </Text>
+          </View>
+        ) : null}
 
         {recurringTasks.map((task, index) => (
           <View key={task.id}>
@@ -177,36 +194,6 @@ export default function OverviewScreen({ navigation, route }: OverviewProps) {
             {index < recurringTasks.length - 1 && <View style={{ height: 16 }} />}
           </View>
         ))}
-
-        {oneOffTasks.length > 0 ? (
-          <View
-            style={{
-              borderWidth: 1,
-              borderColor: theme.border,
-              borderRadius: 10,
-              padding: 12,
-              backgroundColor: theme.surface
-            }}
-          >
-            <View style={{ marginBottom: 8 }}>
-              <Text style={{ fontSize: 16, fontWeight: "700", color: theme.text }}>One-off Tasks</Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 14, marginTop: 2 }}>
-                {oneOffTasks.length} task{oneOffTasks.length === 1 ? "" : "s"} • {oneOffCompletions.length} completion{oneOffCompletions.length === 1 ? "" : "s"}
-              </Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 6 }}>
-                Grouped into one heatmap because one-off tasks do not repeat on a streak cadence.
-              </Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 4 }}>
-                {oneOffTaskNames}
-              </Text>
-            </View>
-
-            <Heatmap
-              startOffsetDays={180}
-              values={getHeatmapData(oneOffCompletions)}
-            />
-          </View>
-        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
