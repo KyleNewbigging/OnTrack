@@ -16,6 +16,7 @@ type RootStackParamList = {
   NewGoal: undefined;
   Consistency: { goalId: string };
   Privacy: undefined;
+  Instructions: undefined;
 };
 
 type HomeProps = NativeStackScreenProps<RootStackParamList, "Home">;
@@ -202,6 +203,27 @@ export default function HomeScreen({ navigation }: HomeProps) {
                 thumbColor={isDark ? theme.surface : theme.background}
               />
             </View>
+
+            <Pressable
+              onPress={() => {
+                void haptics.navigate();
+                setSettingsVisible(false);
+                navigation.navigate("Instructions");
+              }}
+              style={{
+                backgroundColor: theme.background,
+                padding: 12,
+                borderRadius: 10,
+                marginBottom: 12,
+                borderWidth: 1,
+                borderColor: theme.border
+              }}
+            >
+              <Text style={{ color: theme.text, fontWeight: "600", fontSize: 16 }}>How It Works</Text>
+              <Text style={{ color: theme.textSecondary, marginTop: 4 }}>
+                Learn goals, tasks, dates, heatmaps, radar charts, and example data.
+              </Text>
+            </Pressable>
 
             <Pressable
               onPress={() => {

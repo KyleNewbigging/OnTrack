@@ -9,6 +9,7 @@ import GoalScreen from "./components/GoalScreen";
 import NewGoalScreen from "./components/NewGoalScreen";
 import OverviewScreen from "./components/OverviewScreen";
 import PrivacyScreen from "./components/PrivacyScreen";
+import InstructionsScreen from "./components/InstructionsScreen";
 
 type RootStackParamList = {
   Home: undefined;
@@ -16,6 +17,7 @@ type RootStackParamList = {
   NewGoal: undefined;
   Consistency: { goalId: string };
   Privacy: undefined;
+  Instructions: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -40,6 +42,7 @@ function ThemedNavigation() {
         <Stack.Screen name="Goal" component={GoalScreen} options={{ title: "Goal" }} />
         <Stack.Screen name="NewGoal" component={NewGoalScreen} options={{ title: "New Goal" }} />
         <Stack.Screen name="Consistency" component={OverviewScreen} options={{ title: "Consistency" }} />
+        <Stack.Screen name="Instructions" component={InstructionsScreen} options={{ title: "How It Works" }} />
         <Stack.Screen name="Privacy" component={PrivacyScreen} options={{ title: "Privacy & Data" }} />
       </Stack.Navigator>
       <StatusBar style={isDark ? "light" : "dark"} />
