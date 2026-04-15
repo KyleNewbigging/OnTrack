@@ -487,6 +487,7 @@ interface State {
     setSelectedDate: (date: Date) => void;
     updateGoal: (goalId: string, updates: { title?: string; target?: string }) => void;
     addTask: (goalId: string, title: string, frequency: Frequency, customFrequency?: CustomFrequency) => void;
+    updateTask: (goalId: string, taskId: string, updates: { title?: string; frequency?: Frequency; customFrequency?: CustomFrequency | undefined }) => void;
     deleteTask: (goalId: string, taskId: string) => void;
     toggleTaskCompletion: (goalId: string, taskId: string, date?: Date) => void;
     completionsByDate: () => Record<string, number>;
@@ -545,6 +546,28 @@ export const useStore = create<State>()(
                                         completions: [] 
                                     },
                                 ],
+                            }
+                            : g
+                    ),
+                })),
+            updateTask: (goalId, taskId, updates) =>
+                set((s) => ({
+                    goals: s.goals.map((g) =>
+                        g.id === goalId
+                            ? {
+                                ...g,
+                                tasks: g.tasks.map((task) =>
+                                    task.id === taskId
+                                        ? {
+                                            ...task,
+                                            title: updates.title ?? task.title,
+                                            frequency: updates.frequency ?? task.frequency,
+                                            customFrequency: (updates.frequency ?? task.frequency) === "custom"
+                                                ? (updates.customFrequency ?? task.customFrequency)
+                                                : undefined,
+                                        }
+                                        : task
+                                ),
                             }
                             : g
                     ),
