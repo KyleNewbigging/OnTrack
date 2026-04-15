@@ -1,4 +1,6 @@
-<img src="./assets/icon.png" alt="icon" width="200"/>
+<div align="center">
+  <img src="./assets/icon.png" alt="icon" width="200"/>
+</div>
 
 # OnTrack
 
