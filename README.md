@@ -1,3 +1,5 @@
+<img src="./assets/icon.png" alt="icon" width="200"/>
+
 # OnTrack
 
 OnTrack is a habit tracking mobile app built with React Native and Expo. It focuses on simple goal management, daily task completion, and visual consistency tracking.
