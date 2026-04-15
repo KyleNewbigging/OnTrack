@@ -25,6 +25,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const goal = useStore((s) => s.goals.find((g) => g.id === goalId)!);
   const selectedDate = useStore((s) => s.selectedDate);
   const addTask = useStore((s) => s.addTask);
+  const updateTask = useStore((s) => s.updateTask);
   const updateGoal = useStore((s) => s.updateGoal);
   const deleteTask = useStore((s) => s.deleteTask);
   const toggleTask = useStore((s) => s.toggleTaskCompletion);
@@ -34,6 +35,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const [frequency, setFrequency] = React.useState<Frequency>("daily");
   const [customFrequency, setCustomFrequency] = React.useState<CustomFrequency>({ type: "weekly", target: 3 });
   const [isEditing, setIsEditing] = React.useState(false);
+  const [editingTaskId, setEditingTaskId] = React.useState<string | null>(null);
   const [isEditingGoalTitle, setIsEditingGoalTitle] = React.useState(false);
   const [goalTitleDraft, setGoalTitleDraft] = React.useState(goal.title);
 
@@ -77,6 +79,59 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
 
     void haptics.toggle();
     setCustomFrequency((prev) => ({ ...prev, target: nextTarget }));
+  };
+
+  const resetTaskEditor = () => {
+    setTaskTitle("");
+    setFrequency("daily");
+    setCustomFrequency({ type: "weekly", target: 3 });
+    setEditingTaskId(null);
+    setIsEditing(false);
+  };
+
+  const startEditingTask = (taskId: string) => {
+    const task = goal.tasks.find((item) => item.id === taskId);
+
+    if (!task) {
+      void haptics.error();
+      return;
+    }
+
+    setTaskTitle(task.title);
+    setFrequency(task.frequency);
+    setCustomFrequency(task.customFrequency ?? { type: "weekly", target: 3 });
+    setEditingTaskId(task.id);
+    setIsEditing(true);
+    void haptics.tap();
+  };
+
+  const submitTaskEditor = () => {
+    const trimmedTitle = taskTitle.trim();
+
+    if (!trimmedTitle) {
+      void haptics.error();
+      return;
+    }
+
+    const normalizedCustomFrequency = frequency === "custom"
+      ? {
+          ...customFrequency,
+          target: normalizeCustomTarget(customFrequency.target, customFrequency.type),
+        }
+      : undefined;
+
+    if (editingTaskId) {
+      updateTask(goalId, editingTaskId, {
+        title: trimmedTitle,
+        frequency,
+        customFrequency: normalizedCustomFrequency,
+      });
+    } else {
+      addTask(goalId, trimmedTitle, frequency, normalizedCustomFrequency);
+    }
+
+    void haptics.success();
+    resetTaskEditor();
   };
 
   const confirmDeleteTask = (taskId: string, taskTitle: string) => {
@@ -374,19 +429,34 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                       );
                     })()}
                   </View>
-                  <Pressable
-                    onPress={() => confirmDeleteTask(item.id, item.title)}
-                    hitSlop={8}
-                    style={{
-                      alignSelf: "center",
-                      borderRadius: 9999,
-                      paddingHorizontal: 4,
-                      paddingVertical: 4,
-                      opacity: 0.35
-                    }}
-                  >
-                    <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
-                  </Pressable>
+                  <View style={{ alignSelf: "center", gap: 6 }}>
+                    <Pressable
+                      onPress={() => startEditingTask(item.id)}
+                      hitSlop={8}
+                      style={{
+                        alignSelf: "center",
+                        borderRadius: 9999,
+                        paddingHorizontal: 4,
+                        paddingVertical: 4,
+                        opacity: 0.55
+                      }}
+                    >
+                      <Ionicons name="create-outline" size={16} color={theme.textSecondary} />
+                    </Pressable>
+                    <Pressable
+                      onPress={() => confirmDeleteTask(item.id, item.title)}
+                      hitSlop={8}
+                      style={{
+                        alignSelf: "center",
+                        borderRadius: 9999,
+                        paddingHorizontal: 4,
+                        paddingVertical: 4,
+                        opacity: 0.35
+                      }}
+                    >
+                      <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
+                    </Pressable>
+                  </View>
                 </View>
               </Pressable>
               {index < pendingTasks.length - 1 && <View style={{ height: 8 }} />}
@@ -478,19 +548,34 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                         );
                       })()}
                     </View>
-                    <Pressable
-                      onPress={() => confirmDeleteTask(item.id, item.title)}
-                      hitSlop={8}
-                      style={{
-                        alignSelf: "center",
-                        borderRadius: 9999,
-                        paddingHorizontal: 4,
-                        paddingVertical: 4,
-                        opacity: 0.35
-                      }}
-                    >
-                      <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
-                    </Pressable>
+                    <View style={{ alignSelf: "center", gap: 6 }}>
+                      <Pressable
+                        onPress={() => startEditingTask(item.id)}
+                        hitSlop={8}
+                        style={{
+                          alignSelf: "center",
+                          borderRadius: 9999,
+                          paddingHorizontal: 4,
+                          paddingVertical: 4,
+                          opacity: 0.55
+                        }}
+                      >
+                        <Ionicons name="create-outline" size={16} color={theme.textSecondary} />
+                      </Pressable>
+                      <Pressable
+                        onPress={() => confirmDeleteTask(item.id, item.title)}
+                        hitSlop={8}
+                        style={{
+                          alignSelf: "center",
+                          borderRadius: 9999,
+                          paddingHorizontal: 4,
+                          paddingVertical: 4,
+                          opacity: 0.35
+                        }}
+                      >
+                        <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
+                      </Pressable>
+                    </View>
                   </View>
                 </Pressable>
                 {index < completedTasks.length - 1 && <View style={{ height: 8 }} />}
@@ -502,7 +587,15 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         <Pressable
           onPress={() => {
             void haptics.tap();
-            setIsEditing(!isEditing);
+            if (isEditing) {
+              resetTaskEditor();
+            } else {
+              setEditingTaskId(null);
+              setTaskTitle("");
+              setFrequency("daily");
+              setCustomFrequency({ type: "weekly", target: 3 });
+              setIsEditing(true);
+            }
           }}
           style={{
             backgroundColor: theme.surface,
@@ -530,7 +623,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
           visible={isEditing}
           onRequestClose={() => {
             void haptics.tap();
-            setIsEditing(false);
+            resetTaskEditor();
           }}
         >
           <View
@@ -544,7 +637,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             <Pressable
               onPress={() => {
                 void haptics.tap();
-                setIsEditing(false);
+                resetTaskEditor();
               }}
               style={{
                 position: "absolute",
@@ -564,7 +657,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 backgroundColor: theme.surface,
               }}
             >
-              <Text style={{ fontWeight: "700", fontSize: 18, color: theme.text }}>New Task</Text>
+              <Text style={{ fontWeight: "700", fontSize: 18, color: theme.text }}>{editingTaskId ? "Edit Task" : "New Task"}</Text>
               <TextInput
                 placeholder="e.g., Take creatine"
                 value={taskTitle}
@@ -685,7 +778,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 <Pressable
                   onPress={() => {
                     void haptics.tap();
-                    setIsEditing(false);
+                    resetTaskEditor();
                   }}
                   style={{
                     flex: 1,
@@ -699,30 +792,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                   <Text style={{ color: theme.textSecondary, textAlign: "center", fontWeight: "600" }}>Cancel</Text>
                 </Pressable>
                 <Pressable
-                  onPress={() => {
-                    if (taskTitle.trim()) {
-                      void haptics.success();
-                      addTask(
-                        goalId,
-                        taskTitle.trim(),
-                        frequency,
-                        frequency === "custom"
-                          ? {
-                              ...customFrequency,
-                              target: normalizeCustomTarget(customFrequency.target, customFrequency.type),
-                            }
-                          : undefined
-                      );
-                      setTaskTitle("");
-                      setIsEditing(false);
-                      return;
-                    }
-
-                    void haptics.error();
-                  }}
+                  onPress={submitTaskEditor}
                   style={{ flex: 1, backgroundColor: theme.primary, padding: 10, borderRadius: 8 }}
                 >
-                  <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>Add</Text>
+                  <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>{editingTaskId ? "Save" : "Add"}</Text>
                 </Pressable>
               </View>
               {frequency === "custom" ? (
