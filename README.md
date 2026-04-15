@@ -66,6 +66,10 @@ OnTrack/
 
 This repo is maintained with OpenClaw agents.
 
+Hugo is Adam's OpenClaw developer agent for OnTrack and handles a significant amount of the implementation work in this repository.
+
+If you are interested in how this setup works, reach out to [AdamLinCodes](https://github.com/AdamLinCodes).
+
 Core rules:
 
 - Never push directly to `main`
