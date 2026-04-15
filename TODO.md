@@ -1,85 +1,45 @@
-# OnTrack — Project TODO
+# OnTrack TODO
 
-This file tracks features, fixes, and ideas for the OnTrack app.  
-Use ✅ when done, keep lines short and actionable.
+Lightweight backlog for ideas that are not yet tracked as GitHub issues.
 
----
+## How to use this file
 
-## MVP (Now)
-- [x] Create goal (title + optional target)
-- [x] View goal details (task list, frequency)
-- [x] Add task (title + frequency: once/daily/weekly)
-- [x] Toggle “done today” for tasks
-- [x] Delete goal (red pill button + confirm dialog) ✅ in progress
-- [x] Persist state with AsyncStorage
-- [x] Input labels for clarity
-- [x] Handle empty states (no goals, no tasks)
-- [x] Delete task
-- [ ] Consistency heatmap (aggregate completions per day)
+- Prefer GitHub Issues for scoped, actionable work
+- Keep entries short
+- Remove items once they become issues or are completed
+- Avoid mixing status notes into checklist items
 
----
+## Product ideas
 
-## Near-Term Improvements
-- [ ] Edit Goal fields
-- [ ] Edit Task Fields
-- [ ] Tasks filter for Done today: No  to be first
-- [ ] Undo option after deleting a goal (snackbar or banner)
-- [ ] Reset data (dev-only) to clear storage and reseed demo
-- [ ] Demo seed goals only if storage is empty
-- [ ] Radar Chart - For Summarized consistency
-- [ ] Frequency - Custom (# of occurences a week)
-- [ ] Tasks UI for Custom Frequency (Show progress on task details)
----
+- Edit goal fields
+- Edit task fields
+- Put incomplete tasks before done-today tasks
+- Add undo after deleting a goal
+- Add reset-data flow for development only
+- Seed demo goals only when storage is empty
+- Support custom task frequency
+- Show custom frequency progress in task details
+- Add procrastination-prevention notifications
+- Add daily reminders per task
+- Support quiet hours
+- Add weekly task targets and progress bars
+- Add shared account sync
+- Add iOS widgets
+- Add analytics for completion trends
+- Add task archiving instead of hard delete
 
-## Notifications (Later)
-- [ ] Procrastination prevention notifications (not done then keep sending, user determined frequency)
-- [ ] Daily reminders per task (e.g., remind at 8:00 PM)
-- [ ] Quiet hours (don’t ping after certain time)
+## UX and polish
 
----
+- Improve task filtering and ordering
+- Extract heavy inline styles
+- Validate inputs and prevent empty titles
+- Add safer error handling around persistence
+- Add formatting and linting
+- Limit radar chart data points where needed
+- Explore gradient fills for radar chart visuals
 
-## Haptics (Later)
-- [x] Light vibration on confirm delete ✅
-- [x] Light vibration on toggle task ✅
-- *Note:*  
-  - Install: `npm i expo-haptics`  
-  - Import: `import * as Haptics from "expo-haptics";`  
-  - Example:  
-    ```ts
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    ```
+## Documentation and process
 
----
-
-## UX Ideas (Backlog)
-- [ ] Weekly targets for tasks (e.g., workout 3×/week) + progress bar
-- [ ] Assign tasks: Me / Roommate / Rotate weekly
-- [ ] Home summary: streaks, completion rate, current week count
-
----
-
-## Technical Cleanup
-- [ ] Extract inline styles to StyleSheet or small helper functions
-- [ ] Validate inputs (no empty titles, prevent duplicates)
-- [ ] Add error boundaries / try-catch around storage writes
-- [ ] We need to add some sort of code formatter (lint or prettier)
-
----
-
-## Stretch Goals
-- [ ] Sync via Supabase for shared accounts
-- [ ] iOS widgets (streak counter / next action)
-- [ ] Analytics: track most vs least completed goals
-
-## Enhancements
-- [x] save dates as strict Date type rather than ISO string ✅
-- [ ] at some point maybe we should add a limit of 365 for radar chart data points per goal
-- [ ] would be cool for the radar chart fill to be a gradient with respect to the vertex colours
-- [x] Fix warning: SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. ✅
-- [x] Unable to resolve asset "./assets/splash.png" from "splash.image" in your app.json or app.config.js ✅
- - [x] when a task is clicked on a day we should should moved down to a completed section of the page. Perhaps greyed out. this Should be toggle-able back to the todo section. The current behaviour is green highlighting. ✅
- - [x] Delete should be under the edit button ✅
- - [x] Edit button shouldn't say cancel when the edit menu is open, it should instead say Finish Editing ✅
- - [x] Refactor overview to be called Heat Maps and the component HeatMapScreen
- - [x] there is a weird element that covers a little bit of the top HomePage ✅
- - [ ] when we delete tasks, and no longer need to do them. we should have some sort of archiving so that we can look back at them, but they shouln't continue to show up
+- Keep README aligned with the real app scope
+- Keep AGENTS.md aligned with the current dev workflow
+- Move durable work into GitHub Issues instead of growing this file
