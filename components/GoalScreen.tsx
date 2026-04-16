@@ -3,7 +3,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, TextInput, ScrollView, Modal, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useStore, getCustomFrequencyProgress, shouldShowCustomTask } from "../store";
+import { useStore, getCustomFrequencyProgress, getCustomFrequencyAlert, shouldShowCustomTask } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import { format, startOfWeek, endOfWeek, isWithinInterval, isToday } from "date-fns";
 import { Frequency, CustomFrequency } from "../types";
@@ -368,6 +368,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                     <Text style={{ fontWeight: "700", color: theme.text }}>{item.title}</Text>
                     {item.frequency === "custom" && item.customFrequency ? (() => {
                       const progress = getCustomFrequencyProgress(item, selectedDate);
+                      const alert = getCustomFrequencyAlert(item, selectedDate);
                       return (
                         <View style={{ marginTop: 8 }}>
                           <Text style={{ color: theme.textSecondary, fontSize: 12, marginBottom: 4 }}>
@@ -391,6 +392,22 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                               {progress.target - progress.completed} more to go
                             </Text>
                           )}
+                          {alert ? (
+                            <Text
+                              style={{
+                                color: alert.tone === "error"
+                                  ? theme.danger
+                                  : alert.tone === "warning"
+                                    ? theme.warning ?? "#f59e0b"
+                                    : theme.primary,
+                                fontSize: 11,
+                                marginTop: 4,
+                                fontWeight: "600",
+                              }}
+                            >
+                              {alert.message}
+                            </Text>
+                          ) : null}
                         </View>
                       );
                     })() : (() => {
