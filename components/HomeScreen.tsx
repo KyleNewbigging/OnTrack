@@ -1,6 +1,6 @@
 import React, { useState, useLayoutEffect } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Text, View, Pressable, ScrollView, Alert, Switch, Modal } from "react-native";
+import { Text, View, Pressable, ScrollView, Alert, Switch, Modal, AppState } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from '@expo/vector-icons';
 import { useStore, debugAsyncStorage, getCurrentMode } from "../store";
@@ -48,6 +48,24 @@ export default function HomeScreen({ navigation }: HomeProps) {
       ),
     });
   }, [navigation, theme.text]);
+
+  React.useEffect(() => {
+    const resetDateContextToToday = () => {
+      setSelectedDate(new Date());
+    };
+
+    resetDateContextToToday();
+
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        resetDateContextToToday();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [setSelectedDate]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
