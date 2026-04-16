@@ -3,6 +3,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, ScrollView, Alert, Switch, Modal, AppState } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from '@expo/vector-icons';
+import { addDays, isToday, startOfDay, subDays } from "date-fns";
 import { useStore, debugAsyncStorage, getCurrentMode } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import RadarChart from "./RadarChart";
@@ -76,6 +77,21 @@ export default function HomeScreen({ navigation }: HomeProps) {
             onPress={() => {
               void haptics.tap();
               setCalendarVisible(true);
+            }}
+            onPreviousDay={() => {
+              void haptics.tap();
+              setSelectedDate(subDays(selectedDate, 1));
+            }}
+            onNextDay={() => {
+              if (isToday(selectedDate)) {
+                void haptics.warning();
+                return;
+              }
+
+              void haptics.tap();
+              const nextDate = addDays(selectedDate, 1);
+              const today = startOfDay(new Date());
+              setSelectedDate(nextDate > today ? today : nextDate);
             }}
           />
 
