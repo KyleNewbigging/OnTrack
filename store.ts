@@ -2,7 +2,7 @@ import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { Goal, Frequency, CustomFrequency, Task } from "./types";
-import { format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, differenceInCalendarDays } from "date-fns";
 
 // Date utility functions
 const normalizeDate = (date: Date): Date => startOfDay(date);
@@ -66,6 +66,45 @@ export const shouldShowCustomTask = (task: Task, referenceDate: Date = new Date(
   const completedToday = task.completions.some(date => isSameDay(date, referenceDate));
   const { achieved } = getCustomFrequencyProgress(task, referenceDate);
   return !completedToday && !achieved;
+};
+
+export const getCustomFrequencyAlert = (task: Task, referenceDate: Date = new Date()) => {
+  if (task.frequency !== "custom" || !task.customFrequency) {
+    return null;
+  }
+
+  const progress = getCustomFrequencyProgress(task, referenceDate);
+  const completedToday = task.completions.some(date => isSameDay(date, referenceDate));
+  const remainingNeeded = Math.max(progress.target - progress.completed, 0);
+
+  if (remainingNeeded <= 0 || !progress.periodEnd) {
+    return null;
+  }
+
+  const daysRemaining = differenceInCalendarDays(progress.periodEnd, normalizeDate(referenceDate)) + 1;
+
+  if (remainingNeeded > daysRemaining) {
+    return {
+      tone: "error" as const,
+      message: `You can no longer hit this ${task.customFrequency.type} target in the current period.`,
+    };
+  }
+
+  if (!completedToday && remainingNeeded >= daysRemaining) {
+    return {
+      tone: "warning" as const,
+      message: `Do this today or you will not be able to meet this ${task.customFrequency.type} target.`,
+    };
+  }
+
+  if (remainingNeeded === daysRemaining - 1) {
+    return {
+      tone: "notice" as const,
+      message: `${remainingNeeded} completion${remainingNeeded === 1 ? "" : "s"} left with ${daysRemaining} day${daysRemaining === 1 ? "" : "s"} remaining in this ${task.customFrequency.type} period.`,
+    };
+  }
+
+  return null;
 };
 
 // Helper to calculate streak for any goal type
