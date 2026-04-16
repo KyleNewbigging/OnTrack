@@ -2,15 +2,16 @@ import React from "react";
 import { View, Text } from "react-native";
 import Svg, { Polygon, Line, Circle, Text as SvgText } from "react-native-svg";
 import { Goal } from "../types";
-import { format } from "date-fns";
+import { endOfDay, isAfter } from "date-fns";
 import { useTheme } from "../contexts/ThemeContext";
 
 interface RadarChartProps {
   goals: Goal[];
   size?: number;
+  referenceDate?: Date;
 }
 
-export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
+export default function RadarChart({ goals, size = 200, referenceDate = new Date() }: RadarChartProps) {
   const { theme, isDark } = useTheme();
   
   if (goals.length === 0) {
@@ -57,6 +58,8 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
   ];
   
   // Calculate historical completion percentage for each goal
+  const normalizedReferenceDate = endOfDay(referenceDate);
+
   const goalData = goals.map((goal) => {
     const recurringTasks = goal.tasks.filter((task) => task.frequency !== "once");
 
@@ -68,14 +71,20 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
     let totalCompletionRate = 0;
     
     recurringTasks.forEach((task) => {
-      if (task.completions.length === 0) {
+      const completionsThroughReferenceDate = task.completions.filter((completionDate) =>
+        !isAfter(completionDate, normalizedReferenceDate)
+      );
+
+      if (completionsThroughReferenceDate.length === 0) {
         // No completions yet, 0% rate
         totalCompletionRate += 0;
       } else {
         // Calculate how many days this goal has existed
         const goalCreatedDate = new Date(goal.createdAt);
-        const today = new Date();
-        const daysSinceCreation = Math.max(1, Math.ceil((today.getTime() - goalCreatedDate.getTime()) / (1000 * 60 * 60 * 24)));
+        const comparisonDate = normalizedReferenceDate.getTime() < goalCreatedDate.getTime()
+          ? goalCreatedDate
+          : normalizedReferenceDate;
+        const daysSinceCreation = Math.max(1, Math.ceil((comparisonDate.getTime() - goalCreatedDate.getTime()) / (1000 * 60 * 60 * 24)));
         
         // Calculate completion rate based on frequency
         let expectedCompletions;
@@ -88,7 +97,7 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
         }
         
         // Calculate actual completion rate (cap at 100%)
-        const completionRate = Math.min(1.0, task.completions.length / expectedCompletions);
+        const completionRate = Math.min(1.0, completionsThroughReferenceDate.length / expectedCompletions);
         totalCompletionRate += completionRate;
       }
     });
