@@ -61,9 +61,20 @@ export default function RadarChart({ goals, size = 200, referenceDate = new Date
   const normalizedReferenceDate = endOfDay(referenceDate);
 
   const goalData = goals
-    .filter((goal) => !isAfter(new Date(goal.createdAt), normalizedReferenceDate))
     .map((goal) => {
     const recurringTasks = goal.tasks.filter((task) => task.frequency !== "once");
+
+    const allCompletionDates = goal.tasks.flatMap((task) =>
+      task.completions.filter((completionDate) => !isAfter(completionDate, normalizedReferenceDate))
+    );
+
+    const firstCompletionDate = allCompletionDates.length > 0
+      ? new Date(Math.min(...allCompletionDates.map((completionDate) => completionDate.getTime())))
+      : null;
+
+    if (!firstCompletionDate) {
+      return null;
+    }
 
     if (recurringTasks.length === 0) {
       return { title: goal.title, percentage: 0 };
@@ -82,11 +93,10 @@ export default function RadarChart({ goals, size = 200, referenceDate = new Date
         totalCompletionRate += 0;
       } else {
         // Calculate how many days this goal has existed
-        const goalCreatedDate = new Date(goal.createdAt);
-        const comparisonDate = normalizedReferenceDate.getTime() < goalCreatedDate.getTime()
-          ? goalCreatedDate
+        const comparisonDate = normalizedReferenceDate.getTime() < firstCompletionDate.getTime()
+          ? firstCompletionDate
           : normalizedReferenceDate;
-        const daysSinceCreation = Math.max(1, Math.ceil((comparisonDate.getTime() - goalCreatedDate.getTime()) / (1000 * 60 * 60 * 24)));
+        const daysSinceCreation = Math.max(1, Math.ceil((comparisonDate.getTime() - firstCompletionDate.getTime()) / (1000 * 60 * 60 * 24)));
         
         // Calculate completion rate based on frequency
         let expectedCompletions;
@@ -106,7 +116,8 @@ export default function RadarChart({ goals, size = 200, referenceDate = new Date
     
       const percentage = totalCompletionRate / recurringTasks.length;
       return { title: goal.title, percentage };
-    });
+    })
+    .filter((goal): goal is { title: string; percentage: number } => goal !== null);
 
   if (goalData.length === 0) {
     return (
