@@ -3,6 +3,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, TextInput, ScrollView, Modal, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist";
 import { useStore, getCustomFrequencyProgress, getCustomFrequencyAlert, shouldShowCustomTask } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import { format, startOfWeek, endOfWeek, isWithinInterval, isToday } from "date-fns";
@@ -27,6 +28,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const addTask = useStore((s) => s.addTask);
   const updateTask = useStore((s) => s.updateTask);
   const updateGoal = useStore((s) => s.updateGoal);
+  const reorderTasks = useStore((s) => s.reorderTasks);
   const deleteTask = useStore((s) => s.deleteTask);
   const toggleTask = useStore((s) => s.toggleTaskCompletion);
   const { theme } = useTheme();
@@ -38,6 +40,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const [editingTaskId, setEditingTaskId] = React.useState<string | null>(null);
   const [isEditingGoalTitle, setIsEditingGoalTitle] = React.useState(false);
   const [goalTitleDraft, setGoalTitleDraft] = React.useState(goal.title);
+  const [isReorderingTasks, setIsReorderingTasks] = React.useState(false);
 
   if (!goal) return <Text>Not found</Text>;
 
@@ -327,8 +330,78 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         </View>
 
         {/* Pending Tasks Section */}
-        <Text style={{ fontWeight: "700", marginTop: 4, color: theme.text }}>Tasks</Text>
-        {pendingTasks.length === 0 ? (
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
+          <Text style={{ fontWeight: "700", color: theme.text }}>Tasks</Text>
+          {goal.tasks.length > 1 ? (
+            <Pressable
+              onPress={() => {
+                setIsReorderingTasks((prev) => !prev);
+                void haptics.tap();
+              }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 9999,
+                borderWidth: 1,
+                borderColor: isReorderingTasks ? theme.primary : theme.border,
+                backgroundColor: theme.surface,
+              }}
+            >
+              <Ionicons name="reorder-three-outline" size={14} color={isReorderingTasks ? theme.primary : theme.textSecondary} />
+              <Text style={{ color: isReorderingTasks ? theme.primary : theme.textSecondary, fontWeight: "600", fontSize: 12 }}>
+                {isReorderingTasks ? "Done" : "Reorder"}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+        {isReorderingTasks ? (
+          <View style={{ marginTop: 8, gap: 8 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+              Long press and drag tasks to change their order.
+            </Text>
+            <DraggableFlatList
+              data={goal.tasks}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              onDragEnd={({ data }) => {
+                reorderTasks(goalId, data.map((task) => task.id));
+                void haptics.success();
+              }}
+              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+              renderItem={({ item, drag, isActive }: RenderItemParams<(typeof goal.tasks)[number]>) => (
+                <ScaleDecorator>
+                  <Pressable
+                    onLongPress={drag}
+                    delayLongPress={150}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: 12,
+                      borderWidth: 1,
+                      borderColor: isActive ? theme.primary : theme.border,
+                      borderRadius: 10,
+                      backgroundColor: theme.surface,
+                    }}
+                  >
+                    <Ionicons name="reorder-three-outline" size={18} color={theme.textSecondary} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontWeight: "700", color: theme.text }}>{item.title}</Text>
+                      <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                        {item.frequency === "custom" && item.customFrequency
+                          ? `${item.customFrequency.target} times per ${item.customFrequency.type}`
+                          : `Frequency: ${item.frequency}`}
+                      </Text>
+                    </View>
+                  </Pressable>
+                </ScaleDecorator>
+              )}
+            />
+          </View>
+        ) : pendingTasks.length === 0 ? (
           <View style={{
             padding: 20,
             borderRadius: 12,
@@ -482,7 +555,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         )}
 
         {/* Completed Tasks Section */}
-        {completedTasks.length > 0 ? (
+        {!isReorderingTasks && completedTasks.length > 0 ? (
           <>
             <Text style={{ fontWeight: "700", marginTop: 16, color: theme.textSecondary }}>Completed</Text>
             {completedTasks.map((item, index) => (

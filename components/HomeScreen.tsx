@@ -3,6 +3,8 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, ScrollView, Alert, Switch, Modal, AppState } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from '@expo/vector-icons';
+import { addDays, isToday, startOfDay, subDays } from "date-fns";
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist";
 import { useStore, debugAsyncStorage, getCurrentMode } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import RadarChart from "./RadarChart";
@@ -25,13 +27,16 @@ export default function HomeScreen({ navigation }: HomeProps) {
   const goals = useStore((s) => s.goals);
   const selectedDate = useStore((s) => s.selectedDate);
   const setSelectedDate = useStore((s) => s.setSelectedDate);
+  const reorderGoals = useStore((s) => s.reorderGoals);
   const resetAppData = useStore((s) => s.resetAppData);
   const deleteGoal = useStore((s) => s.deleteGoal);
   const currentMode = getCurrentMode();
   const { theme, isDark, toggleTheme, resetThemePreference } = useTheme();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [calendarVisible, setCalendarVisible] = useState(false);
+  const [isReorderingGoals, setIsReorderingGoals] = useState(false);
   const isDevToolsVisible = currentMode === "DEV";
+  const canReorderGoals = goals.length > 1;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -67,6 +72,74 @@ export default function HomeScreen({ navigation }: HomeProps) {
     };
   }, [setSelectedDate]);
 
+  const renderGoalCard = (
+    item: (typeof goals)[number],
+    options?: { drag?: () => void; isActive?: boolean; showDragHandle?: boolean }
+  ) => (
+    <View
+      style={{
+        borderWidth: 1,
+        borderColor: options?.isActive ? theme.primary : theme.border,
+        borderRadius: 10,
+        padding: 12,
+        backgroundColor: theme.surface,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        {options?.showDragHandle ? (
+          <Pressable
+            onLongPress={options.drag}
+            delayLongPress={150}
+            style={{ paddingVertical: 4, paddingRight: 2 }}
+          >
+            <Ionicons name="reorder-three-outline" size={18} color={theme.textSecondary} />
+          </Pressable>
+        ) : null}
+        <Pressable
+          onPress={() => {
+            void haptics.navigate();
+            navigation.navigate("Goal", { goalId: item.id });
+          }}
+          style={{ flex: 1 }}
+        >
+          <Text style={{ fontSize: 16, fontWeight: "700", color: theme.text }}>{item.title}</Text>
+          {item.target && <Text style={{ color: theme.textSecondary }}>Target: {item.target}</Text>}
+          <Text style={{ color: theme.textSecondary }}>Tasks: {item.tasks.length}</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => {
+            void haptics.warning();
+            Alert.alert(
+              "Delete goal?",
+              `This will remove "${item.title}" and all its tasks.`,
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Delete",
+                  style: "destructive",
+                  onPress: () => {
+                    void haptics.destructive();
+                    deleteGoal(item.id);
+                  }
+                }
+              ]
+            );
+          }}
+          style={{
+            alignSelf: "center",
+            borderRadius: 9999,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            opacity: 0.35
+          }}
+        >
+          <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
+        </Pressable>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
       <ScrollView style={{ flex: 1, backgroundColor: theme.background }} showsVerticalScrollIndicator={false}>
@@ -77,72 +150,93 @@ export default function HomeScreen({ navigation }: HomeProps) {
               void haptics.tap();
               setCalendarVisible(true);
             }}
+            onPreviousDay={() => {
+              void haptics.tap();
+              setSelectedDate(subDays(selectedDate, 1));
+            }}
+            onNextDay={() => {
+              if (isToday(selectedDate)) {
+                void haptics.warning();
+                return;
+              }
+
+              void haptics.tap();
+              const nextDate = addDays(selectedDate, 1);
+              const today = startOfDay(new Date());
+              setSelectedDate(nextDate > today ? today : nextDate);
+            }}
           />
 
           <Text style={{ fontSize: 18, fontWeight: "700", color: theme.text }}>Consistency Overview</Text>
           <RadarChart goals={goals} size={250} referenceDate={selectedDate} />
 
-          <Text style={{ fontSize: 18, fontWeight: "700", marginTop: 8, color: theme.text }}>Goals</Text>
-          
-          {/* Goals list */}
-          {goals.map((goal, index) => (
-            <View key={goal.id}>
-              <View
-                style={{ 
-                  borderWidth: 1, 
-                  borderColor: theme.border, 
-                  borderRadius: 10, 
-                  padding: 12, 
-                  backgroundColor: theme.surface 
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+            <Text style={{ fontSize: 18, fontWeight: "700", color: theme.text }}>Goals</Text>
+            {canReorderGoals ? (
+              <Pressable
+                onPress={() => {
+                  setIsReorderingGoals((prev) => !prev);
+                  void haptics.tap();
+                }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 9999,
+                  borderWidth: 1,
+                  borderColor: isReorderingGoals ? theme.primary : theme.border,
+                  backgroundColor: theme.surface,
                 }}
               >
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                  <Pressable
-                    onPress={() => {
-                      void haptics.navigate();
-                      navigation.navigate("Goal", { goalId: goal.id });
+                <Ionicons
+                  name="reorder-three-outline"
+                  size={14}
+                  color={isReorderingGoals ? theme.primary : theme.textSecondary}
+                />
+                <Text style={{ color: isReorderingGoals ? theme.primary : theme.textSecondary, fontWeight: "600", fontSize: 12 }}>
+                  {isReorderingGoals ? "Done" : "Reorder"}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+          
+          {/* Goals list */}
+          {goals.length > 0 ? (
+            <>
+              {isReorderingGoals ? (
+                <View style={{ gap: 8 }}>
+                  <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                    Long press and drag goals to reorder them.
+                  </Text>
+                  <DraggableFlatList
+                    data={goals}
+                    keyExtractor={(item) => item.id}
+                    scrollEnabled={false}
+                    onDragEnd={({ data }) => {
+                      reorderGoals(data.map((goal) => goal.id));
+                      void haptics.success();
                     }}
-                    style={{ flex: 1 }}
-                  >
-                    <Text style={{ fontSize: 16, fontWeight: "700", color: theme.text }}>{goal.title}</Text>
-                    {goal.target && <Text style={{ color: theme.textSecondary }}>Target: {goal.target}</Text>}
-                    <Text style={{ color: theme.textSecondary }}>Tasks: {goal.tasks.length}</Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={() => {
-                      void haptics.warning();
-                      Alert.alert(
-                        "Delete goal?",
-                        `This will remove "${goal.title}" and all its tasks.`,
-                        [
-                          { text: "Cancel", style: "cancel" },
-                          {
-                            text: "Delete",
-                            style: "destructive",
-                            onPress: () => {
-                              void haptics.destructive();
-                              deleteGoal(goal.id);
-                            }
-                          }
-                        ]
-                      );
-                    }}
-                    style={{
-                      alignSelf: "center",
-                      borderRadius: 9999,
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      opacity: 0.35
-                    }}
-                  >
-                    <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
-                  </Pressable>
+                    ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+                    renderItem={({ item, drag, isActive }: RenderItemParams<(typeof goals)[number]>) => (
+                      <ScaleDecorator>
+                        {renderGoalCard(item, { drag, isActive, showDragHandle: true })}
+                      </ScaleDecorator>
+                    )}
+                  />
                 </View>
-              </View>
-              {index < goals.length - 1 && <View style={{ height: 8 }} />}
-            </View>
-          ))}
+              ) : (
+                <View style={{ gap: 8 }}>
+                  {goals.map((goal) => (
+                    <View key={goal.id}>
+                      {renderGoalCard(goal)}
+                    </View>
+                  ))}
+                </View>
+              )}
+            </>
+          ) : null}
 
           <Pressable
             onPress={() => {
