@@ -14,9 +14,10 @@ export default function Heatmap({ startOffsetDays = 120, values, referenceDate =
   const scrollViewRef = useRef<ScrollView>(null);
   const { theme, isDark } = useTheme();
   const focusDate = referenceDate;
+  const today = new Date();
   
   // Calculate start date and adjust to the previous Sunday to ensure Sunday is always top row
-  const roughStart = subDays(focusDate, startOffsetDays);
+  const roughStart = subDays(today, startOffsetDays);
   const start = startOfWeek(roughStart, { weekStartsOn: 0 }); // 0 = Sunday
 
   // Auto-scroll to the right (most recent days) when component mounts
@@ -29,7 +30,7 @@ export default function Heatmap({ startOffsetDays = 120, values, referenceDate =
   }, []);
 
   const days: string[] = [];
-  for (let d = new Date(start); d <= focusDate; d = addDays(d, 1)) {
+  for (let d = new Date(start); d <= today; d = addDays(d, 1)) {
     days.push(format(d, "yyyy-MM-dd"));
   }
 
