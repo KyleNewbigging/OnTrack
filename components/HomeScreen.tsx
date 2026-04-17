@@ -80,7 +80,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
           />
 
           <Text style={{ fontSize: 18, fontWeight: "700", color: theme.text }}>Consistency Overview</Text>
-          <RadarChart goals={goals} size={250} />
+          <RadarChart goals={goals} size={250} referenceDate={selectedDate} />
 
           <Text style={{ fontSize: 18, fontWeight: "700", marginTop: 8, color: theme.text }}>Goals</Text>
           

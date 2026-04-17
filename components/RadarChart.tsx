@@ -2,15 +2,16 @@ import React from "react";
 import { View, Text } from "react-native";
 import Svg, { Polygon, Line, Circle, Text as SvgText } from "react-native-svg";
 import { Goal } from "../types";
-import { format } from "date-fns";
+import { endOfDay, isAfter } from "date-fns";
 import { useTheme } from "../contexts/ThemeContext";
 
 interface RadarChartProps {
   goals: Goal[];
   size?: number;
+  referenceDate?: Date;
 }
 
-export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
+export default function RadarChart({ goals, size = 200, referenceDate = new Date() }: RadarChartProps) {
   const { theme, isDark } = useTheme();
   
   if (goals.length === 0) {
@@ -57,8 +58,23 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
   ];
   
   // Calculate historical completion percentage for each goal
-  const goalData = goals.map((goal) => {
+  const normalizedReferenceDate = endOfDay(referenceDate);
+
+  const goalData = goals
+    .map((goal) => {
     const recurringTasks = goal.tasks.filter((task) => task.frequency !== "once");
+
+    const allCompletionDates = goal.tasks.flatMap((task) =>
+      task.completions.filter((completionDate) => !isAfter(completionDate, normalizedReferenceDate))
+    );
+
+    const firstCompletionDate = allCompletionDates.length > 0
+      ? new Date(Math.min(...allCompletionDates.map((completionDate) => completionDate.getTime())))
+      : null;
+
+    if (!firstCompletionDate) {
+      return null;
+    }
 
     if (recurringTasks.length === 0) {
       return { title: goal.title, percentage: 0 };
@@ -68,14 +84,19 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
     let totalCompletionRate = 0;
     
     recurringTasks.forEach((task) => {
-      if (task.completions.length === 0) {
+      const completionsThroughReferenceDate = task.completions.filter((completionDate) =>
+        !isAfter(completionDate, normalizedReferenceDate)
+      );
+
+      if (completionsThroughReferenceDate.length === 0) {
         // No completions yet, 0% rate
         totalCompletionRate += 0;
       } else {
         // Calculate how many days this goal has existed
-        const goalCreatedDate = new Date(goal.createdAt);
-        const today = new Date();
-        const daysSinceCreation = Math.max(1, Math.ceil((today.getTime() - goalCreatedDate.getTime()) / (1000 * 60 * 60 * 24)));
+        const comparisonDate = normalizedReferenceDate.getTime() < firstCompletionDate.getTime()
+          ? firstCompletionDate
+          : normalizedReferenceDate;
+        const daysSinceCreation = Math.max(1, Math.ceil((comparisonDate.getTime() - firstCompletionDate.getTime()) / (1000 * 60 * 60 * 24)));
         
         // Calculate completion rate based on frequency
         let expectedCompletions;
@@ -88,14 +109,42 @@ export default function RadarChart({ goals, size = 200 }: RadarChartProps) {
         }
         
         // Calculate actual completion rate (cap at 100%)
-        const completionRate = Math.min(1.0, task.completions.length / expectedCompletions);
+        const completionRate = Math.min(1.0, completionsThroughReferenceDate.length / expectedCompletions);
         totalCompletionRate += completionRate;
       }
     });
     
-    const percentage = totalCompletionRate / recurringTasks.length;
-    return { title: goal.title, percentage };
-  });
+      const percentage = totalCompletionRate / recurringTasks.length;
+      return { title: goal.title, percentage };
+    })
+    .filter((goal): goal is { title: string; percentage: number } => goal !== null);
+
+  if (goalData.length === 0) {
+    return (
+      <View style={{ 
+        borderWidth: 1,
+        borderColor: theme.border,
+        borderRadius: 10,
+        padding: 16,
+        backgroundColor: theme.surface,
+        alignItems: "center"
+      }}>
+        <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 12, color: theme.text }}>
+          Goal Consistency Overview
+        </Text>
+
+        <View style={{ 
+          width: size, 
+          height: size, 
+          justifyContent: "center", 
+          alignItems: "center",
+        }}>
+          <Text style={{ color: theme.textSecondary, fontSize: 14 }}>No goals for this date</Text>
+          <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Try a later date to see the radar chart</Text>
+        </View>
+      </View>
+    );
+  }
 
   const angleStep = (2 * Math.PI) / goalData.length;
 
