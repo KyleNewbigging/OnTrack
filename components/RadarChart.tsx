@@ -60,7 +60,9 @@ export default function RadarChart({ goals, size = 200, referenceDate = new Date
   // Calculate historical completion percentage for each goal
   const normalizedReferenceDate = endOfDay(referenceDate);
 
-  const goalData = goals.map((goal) => {
+  const goalData = goals
+    .filter((goal) => !isAfter(new Date(goal.createdAt), normalizedReferenceDate))
+    .map((goal) => {
     const recurringTasks = goal.tasks.filter((task) => task.frequency !== "once");
 
     if (recurringTasks.length === 0) {
@@ -102,9 +104,36 @@ export default function RadarChart({ goals, size = 200, referenceDate = new Date
       }
     });
     
-    const percentage = totalCompletionRate / recurringTasks.length;
-    return { title: goal.title, percentage };
-  });
+      const percentage = totalCompletionRate / recurringTasks.length;
+      return { title: goal.title, percentage };
+    });
+
+  if (goalData.length === 0) {
+    return (
+      <View style={{ 
+        borderWidth: 1,
+        borderColor: theme.border,
+        borderRadius: 10,
+        padding: 16,
+        backgroundColor: theme.surface,
+        alignItems: "center"
+      }}>
+        <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 12, color: theme.text }}>
+          Goal Consistency Overview
+        </Text>
+
+        <View style={{ 
+          width: size, 
+          height: size, 
+          justifyContent: "center", 
+          alignItems: "center",
+        }}>
+          <Text style={{ color: theme.textSecondary, fontSize: 14 }}>No goals for this date</Text>
+          <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Try a later date to see the radar chart</Text>
+        </View>
+      </View>
+    );
+  }
 
   const angleStep = (2 * Math.PI) / goalData.length;
 
