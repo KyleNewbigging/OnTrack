@@ -4,6 +4,7 @@ import { Text, View, Pressable, ScrollView, Alert, Switch, Modal, AppState } fro
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from '@expo/vector-icons';
 import { addDays, isToday, startOfDay, subDays } from "date-fns";
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist";
 import { useStore, debugAsyncStorage, getCurrentMode } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import RadarChart from "./RadarChart";
@@ -26,6 +27,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
   const goals = useStore((s) => s.goals);
   const selectedDate = useStore((s) => s.selectedDate);
   const setSelectedDate = useStore((s) => s.setSelectedDate);
+  const reorderGoals = useStore((s) => s.reorderGoals);
   const resetAppData = useStore((s) => s.resetAppData);
   const deleteGoal = useStore((s) => s.deleteGoal);
   const currentMode = getCurrentMode();
@@ -101,64 +103,87 @@ export default function HomeScreen({ navigation }: HomeProps) {
           <Text style={{ fontSize: 18, fontWeight: "700", marginTop: 8, color: theme.text }}>Goals</Text>
           
           {/* Goals list */}
-          {goals.map((goal, index) => (
-            <View key={goal.id}>
-              <View
-                style={{ 
-                  borderWidth: 1, 
-                  borderColor: theme.border, 
-                  borderRadius: 10, 
-                  padding: 12, 
-                  backgroundColor: theme.surface 
+          {goals.length > 0 ? (
+            <>
+              <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                Long press and drag goals to reorder them.
+              </Text>
+              <DraggableFlatList
+                data={goals}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                onDragEnd={({ data }) => {
+                  reorderGoals(data.map((goal) => goal.id));
+                  void haptics.success();
                 }}
-              >
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                  <Pressable
-                    onPress={() => {
-                      void haptics.navigate();
-                      navigation.navigate("Goal", { goalId: goal.id });
-                    }}
-                    style={{ flex: 1 }}
-                  >
-                    <Text style={{ fontSize: 16, fontWeight: "700", color: theme.text }}>{goal.title}</Text>
-                    {goal.target && <Text style={{ color: theme.textSecondary }}>Target: {goal.target}</Text>}
-                    <Text style={{ color: theme.textSecondary }}>Tasks: {goal.tasks.length}</Text>
-                  </Pressable>
+                ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+                renderItem={({ item, drag, isActive }: RenderItemParams<(typeof goals)[number]>) => (
+                  <ScaleDecorator>
+                    <View
+                      style={{
+                        borderWidth: 1,
+                        borderColor: isActive ? theme.primary : theme.border,
+                        borderRadius: 10,
+                        padding: 12,
+                        backgroundColor: theme.surface,
+                      }}
+                    >
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                        <Pressable
+                          onLongPress={drag}
+                          delayLongPress={150}
+                          style={{ paddingVertical: 4, paddingRight: 2 }}
+                        >
+                          <Ionicons name="reorder-three-outline" size={18} color={theme.textSecondary} />
+                        </Pressable>
+                        <Pressable
+                          onPress={() => {
+                            void haptics.navigate();
+                            navigation.navigate("Goal", { goalId: item.id });
+                          }}
+                          style={{ flex: 1 }}
+                        >
+                          <Text style={{ fontSize: 16, fontWeight: "700", color: theme.text }}>{item.title}</Text>
+                          {item.target && <Text style={{ color: theme.textSecondary }}>Target: {item.target}</Text>}
+                          <Text style={{ color: theme.textSecondary }}>Tasks: {item.tasks.length}</Text>
+                        </Pressable>
 
-                  <Pressable
-                    onPress={() => {
-                      void haptics.warning();
-                      Alert.alert(
-                        "Delete goal?",
-                        `This will remove "${goal.title}" and all its tasks.`,
-                        [
-                          { text: "Cancel", style: "cancel" },
-                          {
-                            text: "Delete",
-                            style: "destructive",
-                            onPress: () => {
-                              void haptics.destructive();
-                              deleteGoal(goal.id);
-                            }
-                          }
-                        ]
-                      );
-                    }}
-                    style={{
-                      alignSelf: "center",
-                      borderRadius: 9999,
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                      opacity: 0.35
-                    }}
-                  >
-                    <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
-                  </Pressable>
-                </View>
-              </View>
-              {index < goals.length - 1 && <View style={{ height: 8 }} />}
-            </View>
-          ))}
+                        <Pressable
+                          onPress={() => {
+                            void haptics.warning();
+                            Alert.alert(
+                              "Delete goal?",
+                              `This will remove "${item.title}" and all its tasks.`,
+                              [
+                                { text: "Cancel", style: "cancel" },
+                                {
+                                  text: "Delete",
+                                  style: "destructive",
+                                  onPress: () => {
+                                    void haptics.destructive();
+                                    deleteGoal(item.id);
+                                  }
+                                }
+                              ]
+                            );
+                          }}
+                          style={{
+                            alignSelf: "center",
+                            borderRadius: 9999,
+                            paddingHorizontal: 8,
+                            paddingVertical: 4,
+                            opacity: 0.35
+                          }}
+                        >
+                          <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
+                        </Pressable>
+                      </View>
+                    </View>
+                  </ScaleDecorator>
+                )}
+              />
+            </>
+          ) : null}
 
           <Pressable
             onPress={() => {

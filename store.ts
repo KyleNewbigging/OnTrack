@@ -523,10 +523,12 @@ interface State {
     goals: Goal[];
     selectedDate: Date;
     addGoal: (title: string, target?: string) => void;
+    reorderGoals: (goalIdsInOrder: string[]) => void;
     setSelectedDate: (date: Date) => void;
     updateGoal: (goalId: string, updates: { title?: string; target?: string }) => void;
     addTask: (goalId: string, title: string, frequency: Frequency, customFrequency?: CustomFrequency) => void;
     updateTask: (goalId: string, taskId: string, updates: { title?: string; frequency?: Frequency; customFrequency?: CustomFrequency | undefined }) => void;
+    reorderTasks: (goalId: string, taskIdsInOrder: string[]) => void;
     deleteTask: (goalId: string, taskId: string) => void;
     toggleTaskCompletion: (goalId: string, taskId: string, date?: Date) => void;
     completionsByDate: () => Record<string, number>;
@@ -553,6 +555,19 @@ export const useStore = create<State>()(
                         { id: makeId(), title, target, tasks: [], createdAt: Date.now() },
                     ],
                 })),
+            reorderGoals: (goalIdsInOrder) =>
+                set((s) => {
+                    const goalMap = new Map(s.goals.map((goal) => [goal.id, goal]));
+                    const reorderedGoals = goalIdsInOrder
+                        .map((goalId) => goalMap.get(goalId))
+                        .filter((goal): goal is Goal => Boolean(goal));
+
+                    const remainingGoals = s.goals.filter((goal) => !goalIdsInOrder.includes(goal.id));
+
+                    return {
+                        goals: [...reorderedGoals, ...remainingGoals],
+                    };
+                }),
             setSelectedDate: (date) =>
                 set({
                     selectedDate: normalizeDate(date),
@@ -610,6 +625,23 @@ export const useStore = create<State>()(
                             }
                             : g
                     ),
+                })),
+            reorderTasks: (goalId, taskIdsInOrder) =>
+                set((s) => ({
+                    goals: s.goals.map((g) => {
+                        if (g.id !== goalId) return g;
+
+                        const taskMap = new Map(g.tasks.map((task) => [task.id, task]));
+                        const reorderedTasks = taskIdsInOrder
+                            .map((taskId) => taskMap.get(taskId))
+                            .filter((task): task is Task => Boolean(task));
+                        const remainingTasks = g.tasks.filter((task) => !taskIdsInOrder.includes(task.id));
+
+                        return {
+                            ...g,
+                            tasks: [...reorderedTasks, ...remainingTasks],
+                        };
+                    }),
                 })),
             deleteTask: (goalId, taskId) =>
                 set((s) => ({
