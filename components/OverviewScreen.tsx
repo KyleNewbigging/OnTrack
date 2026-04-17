@@ -26,6 +26,7 @@ export default function OverviewScreen({ navigation, route }: OverviewProps) {
   const streakRingCircumference = 2 * Math.PI * streakRingRadius;
   const { goalId } = route.params;
   const goal = useStore((s) => s.goals.find((g) => g.id === goalId)!);
+  const selectedDate = useStore((s) => s.selectedDate);
   const { theme } = useTheme();
 
   if (!goal) return <Text>Goal not found</Text>;
@@ -189,6 +190,7 @@ export default function OverviewScreen({ navigation, route }: OverviewProps) {
               <Heatmap 
                 startOffsetDays={180} 
                 values={getHeatmapData(task.completions)}
+                referenceDate={selectedDate}
               />
             </View>
             {index < recurringTasks.length - 1 && <View style={{ height: 16 }} />}
