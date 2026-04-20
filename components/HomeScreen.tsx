@@ -11,6 +11,7 @@ import RadarChart from "./RadarChart";
 import DateContextCard from "./DateContextCard";
 import CalendarModal from "./CalendarModal";
 import { haptics } from "../utils/haptics";
+import { RadarChartMode } from "./RadarChart";
 
 type RootStackParamList = {
   Home: undefined;
@@ -35,6 +36,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [isReorderingGoals, setIsReorderingGoals] = useState(false);
+  const [radarMode, setRadarMode] = useState<RadarChartMode>("current");
   const isDevToolsVisible = currentMode === "DEV";
   const canReorderGoals = goals.length > 1;
 
@@ -168,7 +170,33 @@ export default function HomeScreen({ navigation }: HomeProps) {
           />
 
           <Text style={{ fontSize: 18, fontWeight: "700", color: theme.text }}>Consistency Overview</Text>
-          <RadarChart goals={goals} size={250} referenceDate={selectedDate} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {([
+              { key: "current", label: "Current" },
+              { key: "trend", label: "All-time trend" },
+            ] as const).map((option) => (
+              <Pressable
+                key={option.key}
+                onPress={() => {
+                  setRadarMode(option.key);
+                  void haptics.tap();
+                }}
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 9999,
+                  borderWidth: 1,
+                  borderColor: radarMode === option.key ? theme.primary : theme.border,
+                  backgroundColor: radarMode === option.key ? theme.primary + "20" : theme.surface,
+                }}
+              >
+                <Text style={{ color: radarMode === option.key ? theme.primary : theme.textSecondary, fontWeight: "600", fontSize: 12 }}>
+                  {option.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <RadarChart goals={goals} size={250} referenceDate={selectedDate} mode={radarMode} />
 
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
             <Text style={{ fontSize: 18, fontWeight: "700", color: theme.text }}>Goals</Text>

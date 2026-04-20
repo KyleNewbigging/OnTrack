@@ -2,16 +2,42 @@ import React from "react";
 import { View, Text } from "react-native";
 import Svg, { Polygon, Line, Circle, Text as SvgText } from "react-native-svg";
 import { Goal } from "../types";
-import { endOfDay, isAfter } from "date-fns";
+import { endOfDay, isAfter, isSameDay, isWithinInterval, startOfWeek, endOfWeek, differenceInCalendarDays } from "date-fns";
 import { useTheme } from "../contexts/ThemeContext";
+import { getCustomFrequencyProgress } from "../store";
+
+export type RadarChartMode = "current" | "trend";
 
 interface RadarChartProps {
   goals: Goal[];
   size?: number;
   referenceDate?: Date;
+  mode?: RadarChartMode;
 }
 
-export default function RadarChart({ goals, size = 200, referenceDate = new Date() }: RadarChartProps) {
+const getDailyTrendScore = (completionDates: Date[], startDate: Date, referenceDate: Date) => {
+  const days = Math.max(1, differenceInCalendarDays(referenceDate, startDate) + 1);
+  return Math.min(1, completionDates.length / days);
+};
+
+const getWeeklyTrendScore = (completionDates: Date[], startDate: Date, referenceDate: Date) => {
+  const days = Math.max(1, differenceInCalendarDays(referenceDate, startDate) + 1);
+  const expectedWeeks = Math.max(1, Math.ceil(days / 7));
+  return Math.min(1, completionDates.length / expectedWeeks);
+};
+
+const getCustomTrendScore = (completionDates: Date[], target: number, periodType: "weekly" | "monthly", startDate: Date, referenceDate: Date) => {
+  if (target <= 0) return 0;
+
+  const days = Math.max(1, differenceInCalendarDays(referenceDate, startDate) + 1);
+  const expectedPeriods = periodType === "weekly"
+    ? Math.max(1, Math.ceil(days / 7))
+    : Math.max(1, Math.ceil(days / 30));
+
+  return Math.min(1, completionDates.length / (target * expectedPeriods));
+};
+
+export default function RadarChart({ goals, size = 200, referenceDate = new Date(), mode = "current" }: RadarChartProps) {
   const { theme, isDark } = useTheme();
   
   if (goals.length === 0) {
@@ -57,64 +83,76 @@ export default function RadarChart({ goals, size = 200, referenceDate = new Date
     "#f97316"  // Orange-red
   ];
   
-  // Calculate historical completion percentage for each goal
   const normalizedReferenceDate = endOfDay(referenceDate);
 
   const goalData = goals
     .map((goal) => {
-    const recurringTasks = goal.tasks.filter((task) => task.frequency !== "once");
+      const recurringTasks = goal.tasks.filter((task) => task.frequency !== "once");
 
-    const allCompletionDates = goal.tasks.flatMap((task) =>
-      task.completions.filter((completionDate) => !isAfter(completionDate, normalizedReferenceDate))
-    );
-
-    const firstCompletionDate = allCompletionDates.length > 0
-      ? new Date(Math.min(...allCompletionDates.map((completionDate) => completionDate.getTime())))
-      : null;
-
-    if (!firstCompletionDate) {
-      return null;
-    }
-
-    if (recurringTasks.length === 0) {
-      return { title: goal.title, percentage: 0 };
-    }
-    
-    // Calculate average completion rate across all tasks in this goal
-    let totalCompletionRate = 0;
-    
-    recurringTasks.forEach((task) => {
-      const completionsThroughReferenceDate = task.completions.filter((completionDate) =>
-        !isAfter(completionDate, normalizedReferenceDate)
+      const allCompletionDates = recurringTasks.flatMap((task) =>
+        task.completions.filter((completionDate) => !isAfter(completionDate, normalizedReferenceDate))
       );
 
-      if (completionsThroughReferenceDate.length === 0) {
-        // No completions yet, 0% rate
-        totalCompletionRate += 0;
-      } else {
-        // Calculate how many days this goal has existed
-        const comparisonDate = normalizedReferenceDate.getTime() < firstCompletionDate.getTime()
-          ? firstCompletionDate
-          : normalizedReferenceDate;
-        const daysSinceCreation = Math.max(1, Math.ceil((comparisonDate.getTime() - firstCompletionDate.getTime()) / (1000 * 60 * 60 * 24)));
-        
-        // Calculate completion rate based on frequency
-        let expectedCompletions;
-        if (task.frequency === 'daily') {
-          expectedCompletions = daysSinceCreation;
-        } else if (task.frequency === 'weekly') {
-          expectedCompletions = Math.ceil(daysSinceCreation / 7);
-        } else { // custom
-          expectedCompletions = 1;
-        }
-        
-        // Calculate actual completion rate (cap at 100%)
-        const completionRate = Math.min(1.0, completionsThroughReferenceDate.length / expectedCompletions);
-        totalCompletionRate += completionRate;
+      const firstCompletionDate = allCompletionDates.length > 0
+        ? new Date(Math.min(...allCompletionDates.map((completionDate) => completionDate.getTime())))
+        : null;
+
+      if (!firstCompletionDate) {
+        return null;
       }
-    });
-    
-      const percentage = totalCompletionRate / recurringTasks.length;
+
+      if (recurringTasks.length === 0) {
+        return { title: goal.title, percentage: 0 };
+      }
+
+      const taskScores = recurringTasks.map((task) => {
+        const completionsThroughReferenceDate = task.completions.filter((completionDate) =>
+          !isAfter(completionDate, normalizedReferenceDate)
+        );
+
+        if (completionsThroughReferenceDate.length === 0) {
+          return 0;
+        }
+
+        if (mode === "current") {
+          if (task.frequency === "daily") {
+            return completionsThroughReferenceDate.some((completionDate) => isSameDay(completionDate, normalizedReferenceDate)) ? 1 : 0;
+          }
+
+          if (task.frequency === "weekly") {
+            const weekStart = startOfWeek(normalizedReferenceDate, { weekStartsOn: 0 });
+            const weekEnd = endOfWeek(normalizedReferenceDate, { weekStartsOn: 0 });
+            return completionsThroughReferenceDate.some((completionDate) =>
+              isWithinInterval(completionDate, { start: weekStart, end: weekEnd })
+            ) ? 1 : 0;
+          }
+
+          const progress = getCustomFrequencyProgress(task, normalizedReferenceDate);
+          return progress.target > 0 ? Math.min(1, progress.completed / progress.target) : 0;
+        }
+
+        if (task.frequency === "daily") {
+          return getDailyTrendScore(completionsThroughReferenceDate, firstCompletionDate, normalizedReferenceDate);
+        }
+
+        if (task.frequency === "weekly") {
+          return getWeeklyTrendScore(completionsThroughReferenceDate, firstCompletionDate, normalizedReferenceDate);
+        }
+
+        if (task.customFrequency) {
+          return getCustomTrendScore(
+            completionsThroughReferenceDate,
+            task.customFrequency.target,
+            task.customFrequency.type,
+            firstCompletionDate,
+            normalizedReferenceDate
+          );
+        }
+
+        return 0;
+      });
+
+      const percentage = taskScores.reduce((sum, score) => sum + score, 0) / recurringTasks.length;
       return { title: goal.title, percentage };
     })
     .filter((goal): goal is { title: string; percentage: number } => goal !== null);
