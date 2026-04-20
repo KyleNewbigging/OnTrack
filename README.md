@@ -49,6 +49,19 @@ Useful shortcuts:
 - `npm run ios`
 - `npm run android`
 - `npm run web`
+- `npm test`
+
+### Testing
+
+OnTrack uses Jest with `jest-expo` and React Native Testing Library for unit-level testing.
+
+Run the test suite with:
+
+```bash
+npm test
+```
+
+This is intended as the foundation for adding regression tests around existing bugs and future behavior changes.
 
 ## Project structure
 
