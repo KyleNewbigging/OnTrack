@@ -74,10 +74,62 @@ export default function HomeScreen({ navigation }: HomeProps) {
     };
   }, [setSelectedDate]);
 
+  const getGoalProgress = (goal: (typeof goals)[number]) => {
+    const relevantTasks = goal.tasks.filter((task) => task.frequency !== "once");
+
+    if (relevantTasks.length === 0) {
+      return { completed: 0, total: 0, percent: 0, isComplete: false };
+    }
+
+    const selectedWeekStart = startOfDay(subDays(selectedDate, selectedDate.getDay()));
+    const selectedWeekEnd = startOfDay(addDays(selectedWeekStart, 6));
+
+    const completed = relevantTasks.reduce((count, task) => {
+      if (task.frequency === "daily") {
+        return count + (task.completions.some((date) => startOfDay(date).getTime() === startOfDay(selectedDate).getTime()) ? 1 : 0);
+      }
+
+      if (task.frequency === "weekly") {
+        return count + (task.completions.some((date) => {
+          const normalizedDate = startOfDay(date);
+          return normalizedDate >= selectedWeekStart && normalizedDate <= selectedWeekEnd;
+        }) ? 1 : 0);
+      }
+
+      if (task.frequency === "custom" && task.customFrequency) {
+        const periodStart = task.customFrequency.type === "weekly"
+          ? selectedWeekStart
+          : startOfDay(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+        const periodEnd = task.customFrequency.type === "weekly"
+          ? selectedWeekEnd
+          : startOfDay(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0));
+        const completionsInPeriod = task.completions.filter((date) => {
+          const normalizedDate = startOfDay(date);
+          return normalizedDate >= periodStart && normalizedDate <= periodEnd;
+        }).length;
+
+        return count + Math.min(completionsInPeriod / task.customFrequency.target, 1);
+      }
+
+      return count;
+    }, 0);
+
+    const percent = completed / relevantTasks.length;
+    return {
+      completed,
+      total: relevantTasks.length,
+      percent,
+      isComplete: percent >= 1,
+    };
+  };
+
   const renderGoalCard = (
     item: (typeof goals)[number],
     options?: { drag?: () => void; isActive?: boolean; showDragHandle?: boolean }
-  ) => (
+  ) => {
+    const progress = getGoalProgress(item);
+
+    return (
     <View
       style={{
         borderWidth: 1,
@@ -85,8 +137,20 @@ export default function HomeScreen({ navigation }: HomeProps) {
         borderRadius: 10,
         padding: 12,
         backgroundColor: theme.surface,
+        overflow: "hidden",
       }}
     >
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          left: 0,
+          width: `${Math.max(progress.percent * 100, progress.percent > 0 ? 8 : 0)}%`,
+          backgroundColor: progress.isComplete ? theme.textSecondary + "30" : theme.primary + "18",
+        }}
+      />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         {options?.showDragHandle ? (
           <Pressable
@@ -106,7 +170,11 @@ export default function HomeScreen({ navigation }: HomeProps) {
         >
           <Text style={{ fontSize: 16, fontWeight: "700", color: theme.text }}>{item.title}</Text>
           {item.target && <Text style={{ color: theme.textSecondary }}>Target: {item.target}</Text>}
-          <Text style={{ color: theme.textSecondary }}>Tasks: {item.tasks.length}</Text>
+          <Text style={{ color: theme.textSecondary }}>
+            {progress.total > 0
+              ? `${Math.round(progress.percent * 100)}% complete, ${progress.completed.toFixed(progress.completed % 1 === 0 ? 0 : 1)}/${progress.total} progress today`
+              : `Tasks: ${item.tasks.length}`}
+          </Text>
         </Pressable>
 
         <Pressable
@@ -141,6 +209,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
       </View>
     </View>
   );
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
