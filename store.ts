@@ -542,6 +542,16 @@ const getInitialGoals = (): Goal[] => {
     return CURRENT_MODE === 'DEV' ? getSampleGoals() : [];
 };
 
+const reorderItemsByIds = <T extends { id: string }>(items: T[], idsInOrder: string[]): T[] => {
+    const itemMap = new Map(items.map((item) => [item.id, item]));
+    const reorderedItems = idsInOrder
+        .map((id) => itemMap.get(id))
+        .filter((item): item is T => Boolean(item));
+    const remainingItems = items.filter((item) => !idsInOrder.includes(item.id));
+
+    return [...reorderedItems, ...remainingItems];
+};
+
 export const useStore = create<State>()(
     persist(
         (set, get) => ({
@@ -557,15 +567,8 @@ export const useStore = create<State>()(
                 })),
             reorderGoals: (goalIdsInOrder) =>
                 set((s) => {
-                    const goalMap = new Map(s.goals.map((goal) => [goal.id, goal]));
-                    const reorderedGoals = goalIdsInOrder
-                        .map((goalId) => goalMap.get(goalId))
-                        .filter((goal): goal is Goal => Boolean(goal));
-
-                    const remainingGoals = s.goals.filter((goal) => !goalIdsInOrder.includes(goal.id));
-
                     return {
-                        goals: [...reorderedGoals, ...remainingGoals],
+                        goals: reorderItemsByIds(s.goals, goalIdsInOrder),
                     };
                 }),
             setSelectedDate: (date) =>
@@ -631,15 +634,9 @@ export const useStore = create<State>()(
                     goals: s.goals.map((g) => {
                         if (g.id !== goalId) return g;
 
-                        const taskMap = new Map(g.tasks.map((task) => [task.id, task]));
-                        const reorderedTasks = taskIdsInOrder
-                            .map((taskId) => taskMap.get(taskId))
-                            .filter((task): task is Task => Boolean(task));
-                        const remainingTasks = g.tasks.filter((task) => !taskIdsInOrder.includes(task.id));
-
                         return {
                             ...g,
-                            tasks: [...reorderedTasks, ...remainingTasks],
+                            tasks: reorderItemsByIds(g.tasks, taskIdsInOrder),
                         };
                     }),
                 })),
