@@ -75,7 +75,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
   }, [setSelectedDate]);
 
   const getGoalProgress = (goal: (typeof goals)[number]) => {
-    const relevantTasks = goal.tasks.filter((task) => task.frequency !== "once");
+    const relevantTasks = goal.tasks;
 
     if (relevantTasks.length === 0) {
       return { completed: 0, total: 0, percent: 0, isComplete: false };
@@ -103,6 +103,10 @@ export default function HomeScreen({ navigation }: HomeProps) {
         const { achieved } = getCustomFrequencyProgress(task, selectedDate);
 
         return count + (completedToday || achieved ? 1 : 0);
+      }
+
+      if (task.frequency === "once") {
+        return count + (task.completions.some((date) => startOfDay(date) <= startOfDay(selectedDate)) ? 1 : 0);
       }
 
       return count;
@@ -141,7 +145,9 @@ export default function HomeScreen({ navigation }: HomeProps) {
           top: 0,
           bottom: 0,
           left: 0,
-          width: `${Math.max(progress.percent * 100, progress.percent > 0 ? 8 : 0)}%`,
+          ...(progress.isComplete
+            ? { right: 0 }
+            : { width: `${Math.max(progress.percent * 100, progress.percent > 0 ? 8 : 0)}%` }),
           backgroundColor: progress.isComplete ? theme.textSecondary + "30" : theme.primary + "18",
         }}
       />
