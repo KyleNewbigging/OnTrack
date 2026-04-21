@@ -68,6 +68,14 @@ export const shouldShowCustomTask = (task: Task, referenceDate: Date = new Date(
   return !completedToday && !achieved;
 };
 
+export const isOnceTaskCompletedOnDate = (task: Task, referenceDate: Date = new Date()): boolean => {
+  if (task.frequency !== "once") {
+    return false;
+  }
+
+  return task.completions.some((date) => isSameDay(date, referenceDate));
+};
+
 export const getCustomFrequencyAlert = (task: Task, referenceDate: Date = new Date()) => {
   if (task.frequency !== "custom" || !task.customFrequency) {
     return null;

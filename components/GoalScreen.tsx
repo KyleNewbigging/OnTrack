@@ -4,7 +4,7 @@ import { Text, View, Pressable, TextInput, ScrollView, Modal, Alert } from "reac
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist";
-import { useStore, getCustomFrequencyProgress, getCustomFrequencyAlert, shouldShowCustomTask } from "../store";
+import { useStore, getCustomFrequencyProgress, getCustomFrequencyAlert, shouldShowCustomTask, isOnceTaskCompletedOnDate } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import { format, startOfWeek, endOfWeek, isWithinInterval, isToday } from "date-fns";
 import { Frequency, CustomFrequency } from "../types";
@@ -211,7 +211,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
     }
 
     if (item.frequency === "once") {
-      return item.completions.length > 0;
+      return isOnceTaskCompletedOnDate(item, selectedDate);
     }
 
     return false;
