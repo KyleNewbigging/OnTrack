@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from '@expo/vector-icons';
 import { addDays, isToday, startOfDay, subDays } from "date-fns";
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist";
-import { useStore, debugAsyncStorage, getCurrentMode } from "../store";
+import { useStore, debugAsyncStorage, getCurrentMode, getCustomFrequencyProgress } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import RadarChart from "./RadarChart";
 import DateContextCard from "./DateContextCard";
@@ -97,18 +97,12 @@ export default function HomeScreen({ navigation }: HomeProps) {
       }
 
       if (task.frequency === "custom" && task.customFrequency) {
-        const periodStart = task.customFrequency.type === "weekly"
-          ? selectedWeekStart
-          : startOfDay(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
-        const periodEnd = task.customFrequency.type === "weekly"
-          ? selectedWeekEnd
-          : startOfDay(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0));
-        const completionsInPeriod = task.completions.filter((date) => {
-          const normalizedDate = startOfDay(date);
-          return normalizedDate >= periodStart && normalizedDate <= periodEnd;
-        }).length;
+        const completedToday = task.completions.some(
+          (date) => startOfDay(date).getTime() === startOfDay(selectedDate).getTime()
+        );
+        const { achieved } = getCustomFrequencyProgress(task, selectedDate);
 
-        return count + Math.min(completionsInPeriod / task.customFrequency.target, 1);
+        return count + (completedToday || achieved ? 1 : 0);
       }
 
       return count;
@@ -172,7 +166,7 @@ export default function HomeScreen({ navigation }: HomeProps) {
           {item.target && <Text style={{ color: theme.textSecondary }}>Target: {item.target}</Text>}
           <Text style={{ color: theme.textSecondary }}>
             {progress.total > 0
-              ? `${Math.round(progress.percent * 100)}% complete, ${progress.completed.toFixed(progress.completed % 1 === 0 ? 0 : 1)}/${progress.total} progress today`
+              ? `${Math.round(progress.percent * 100)}% complete, ${progress.completed.toFixed(0)}/${progress.total} complete for this day`
               : `Tasks: ${item.tasks.length}`}
           </Text>
         </Pressable>
