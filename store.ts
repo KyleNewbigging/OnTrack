@@ -19,6 +19,10 @@ type PersistedGoal = Omit<Goal, "tasks"> & {
   subGoals?: PersistedTask[];
 };
 
+type PersistedStoreSnapshot = {
+  goals?: PersistedGoal[];
+};
+
 const normalizeTask = (task: PersistedTask): Task => ({
   ...task,
   completions: task.completions?.map((completion) =>
@@ -273,13 +277,13 @@ export const debugAsyncStorage = async () => {
                 const data = await AsyncStorage.getItem(key);
                 console.log(`\n--- ${key} ---`);
                 if (data) {
-                    const parsed = JSON.parse(data);
+                    const parsed = JSON.parse(data) as PersistedStoreSnapshot;
                     console.log(`Goals count: ${parsed.goals?.length || 0}`);
                     console.log(`Data size: ${data.length} characters`);
                     console.log(`Created: ${new Date(parsed.goals?.[0]?.createdAt || Date.now()).toISOString()}`);
                     
                     // Show sample of each goal
-                    parsed.goals?.forEach((goal: any, index: number) => {
+                    parsed.goals?.forEach((goal, index) => {
                         console.log(`  Goal ${index + 1}: ${goal.title} (${goal.tasks?.length || goal.subGoals?.length || 0} tasks)`);
                     });
                 } else {
