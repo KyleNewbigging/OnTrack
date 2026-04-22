@@ -1,4 +1,4 @@
-import { getCustomFrequencyProgress } from './store';
+import { createBackupPayload, getCustomFrequencyProgress } from './store';
 import { Task } from './types';
 
 describe('getCustomFrequencyProgress', () => {
@@ -43,5 +43,36 @@ describe('getCustomFrequencyProgress', () => {
     expect(progress.completed).toBe(4);
     expect(progress.target).toBe(5);
     expect(progress.achieved).toBe(false);
+  });
+});
+
+describe('createBackupPayload', () => {
+  it('serializes dates and includes export metadata', () => {
+    const payload = createBackupPayload(
+      [
+        {
+          id: 'goal-1',
+          title: 'Fitness',
+          target: 'Stay consistent',
+          createdAt: 1710000000000,
+          tasks: [
+            {
+              id: 'task-1',
+              title: 'Workout',
+              frequency: 'daily',
+              completions: [new Date('2026-04-22T12:00:00.000Z')],
+            },
+          ],
+        },
+      ],
+      new Date('2026-04-21T12:00:00.000Z'),
+      new Date('2026-04-22T15:30:00.000Z')
+    );
+
+    expect(payload.exportedAt).toBe('2026-04-22T15:30:00.000Z');
+    expect(payload.mode).toBe('PROD');
+    expect(payload.storageKey).toBe('ontrack-store-prod');
+    expect(payload.selectedDate).toBe('2026-04-21T04:00:00.000Z');
+    expect(payload.goals[0].tasks[0].completions).toEqual(['2026-04-22T12:00:00.000Z']);
   });
 });

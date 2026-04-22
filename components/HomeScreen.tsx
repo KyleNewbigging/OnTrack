@@ -5,7 +5,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from '@expo/vector-icons';
 import { addDays, isToday, startOfDay, subDays } from "date-fns";
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist";
-import { useStore, debugAsyncStorage, getCurrentMode, getCustomFrequencyProgress } from "../store";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import { useStore, debugAsyncStorage, exportBackupData, getCurrentMode, getCustomFrequencyProgress } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import RadarChart from "./RadarChart";
 import DateContextCard from "./DateContextCard";
@@ -37,8 +39,50 @@ export default function HomeScreen({ navigation }: HomeProps) {
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [isReorderingGoals, setIsReorderingGoals] = useState(false);
   const [radarMode, setRadarMode] = useState<RadarChartMode>("current");
+  const [isExportingBackup, setIsExportingBackup] = useState(false);
   const isDevToolsVisible = currentMode === "DEV";
   const canReorderGoals = goals.length > 1;
+
+  const handleExportBackup = async () => {
+    if (isExportingBackup) {
+      return;
+    }
+
+    try {
+      setIsExportingBackup(true);
+      await haptics.tap();
+
+      const backup = await exportBackupData();
+      const backupDirectory = `${FileSystem.cacheDirectory}backups/`;
+      const fileUri = `${backupDirectory}ontrack-backup-${backup.exportedAt.replace(/[:.]/g, "-")}.json`;
+
+      await FileSystem.makeDirectoryAsync(backupDirectory, { intermediates: true });
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(backup, null, 2));
+
+      const canShare = await Sharing.isAvailableAsync();
+
+      if (!canShare) {
+        throw new Error("Sharing is not available on this device.");
+      }
+
+      await Sharing.shareAsync(fileUri, {
+        mimeType: "application/json",
+        dialogTitle: "Share OnTrack backup",
+        UTI: "public.json",
+      });
+
+      await haptics.success();
+    } catch (error) {
+      console.error("Error exporting backup:", error);
+      await haptics.warning();
+      Alert.alert(
+        "Backup export failed",
+        "We couldn’t prepare a shareable backup file on this device. Please try again."
+      );
+    } finally {
+      setIsExportingBackup(false);
+    }
+  };
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -452,6 +496,28 @@ export default function HomeScreen({ navigation }: HomeProps) {
               <Text style={{ color: theme.text, fontWeight: "600", fontSize: 16 }}>Privacy & Data</Text>
               <Text style={{ color: theme.textSecondary, marginTop: 4 }}>
                 Goals and completion history stay on this device.
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                void handleExportBackup();
+              }}
+              style={{
+                backgroundColor: theme.background,
+                padding: 12,
+                borderRadius: 10,
+                marginBottom: 20,
+                borderWidth: 1,
+                borderColor: theme.border,
+                opacity: isExportingBackup ? 0.7 : 1,
+              }}
+            >
+              <Text style={{ color: theme.text, fontWeight: "600", fontSize: 16 }}>
+                {isExportingBackup ? "Preparing backup..." : "Export backup"}
+              </Text>
+              <Text style={{ color: theme.textSecondary, marginTop: 4 }}>
+                Create a shareable JSON backup of your goals and history for beta testing support.
               </Text>
             </Pressable>
 
