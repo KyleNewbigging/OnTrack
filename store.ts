@@ -19,6 +19,26 @@ type PersistedGoal = Omit<Goal, "tasks"> & {
   subGoals?: PersistedTask[];
 };
 
+export interface BackupPayload {
+  exportedAt: string;
+  storageKey: string;
+  mode: "DEV" | "PROD";
+  selectedDate: string;
+  goals: Array<{
+    id: string;
+    title: string;
+    target?: string;
+    createdAt: number;
+    tasks: Array<{
+      id: string;
+      title: string;
+      frequency: Frequency;
+      customFrequency?: CustomFrequency;
+      completions: string[];
+    }>;
+  }>;
+}
+
 const normalizeTask = (task: PersistedTask): Task => ({
   ...task,
   completions: task.completions?.map((completion) =>
@@ -30,6 +50,35 @@ const normalizeGoal = (goal: PersistedGoal): Goal => ({
   ...goal,
   tasks: (goal.tasks ?? goal.subGoals ?? []).map(normalizeTask),
 });
+
+export const createBackupPayload = (
+  goals: Goal[],
+  selectedDate: Date,
+  exportedAt: Date = new Date()
+): BackupPayload => ({
+  exportedAt: exportedAt.toISOString(),
+  storageKey: ACTIVE_STORAGE_KEY,
+  mode: CURRENT_MODE,
+  selectedDate: normalizeDate(selectedDate).toISOString(),
+  goals: goals.map((goal) => ({
+    id: goal.id,
+    title: goal.title,
+    target: goal.target,
+    createdAt: goal.createdAt,
+    tasks: goal.tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      frequency: task.frequency,
+      customFrequency: task.customFrequency,
+      completions: task.completions.map((completion) => completion.toISOString()),
+    })),
+  })),
+});
+
+export const exportBackupData = async (): Promise<BackupPayload> => {
+  const state = useStore.getState();
+  return createBackupPayload(state.goals, state.selectedDate);
+};
 
 // Helper functions for custom frequency calculations
 export const getCustomFrequencyProgress = (task: Task, referenceDate: Date = new Date()) => {
