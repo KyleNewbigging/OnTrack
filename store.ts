@@ -306,7 +306,7 @@ function makeId() {
 }
 
 // Sample data for development/testing
-function getSampleGoals(): Goal[] {
+export function getSampleGoals(): Goal[] {
     return [
         {
             id: makeId(),
@@ -533,6 +533,7 @@ interface State {
     toggleTaskCompletion: (goalId: string, taskId: string, date?: Date) => void;
     completionsByDate: () => Record<string, number>;
     deleteGoal: (goalId: string) => void;
+    seedDemoData: () => void;
     resetAppData: () => void;
 }
 
@@ -702,6 +703,18 @@ export const useStore = create<State>()(
                 set((s) => ({
                     goals: s.goals.filter((g) => g.id !== goalId),
                 }));
+            },
+            seedDemoData: () => {
+                set((s) => {
+                    if (s.goals.length > 0) {
+                        return s;
+                    }
+
+                    return {
+                        goals: getSampleGoals(),
+                        selectedDate: normalizeDate(new Date()),
+                    };
+                });
             },
             resetAppData: () => {
                 set({
