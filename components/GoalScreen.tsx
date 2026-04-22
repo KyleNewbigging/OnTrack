@@ -69,6 +69,13 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const getMaxCustomTarget = (type: CustomFrequency["type"]) =>
     type === "weekly" ? MAX_WEEKLY_CUSTOM_TARGET : MAX_MONTHLY_CUSTOM_TARGET;
 
+  const taskActionButtonStyle = {
+    alignSelf: "center" as const,
+    borderRadius: 9999,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  };
+
   const normalizeCustomTarget = (target: number, type: CustomFrequency["type"]) =>
     Math.min(getMaxCustomTarget(type), Math.max(1, target));
 
@@ -216,6 +223,31 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
 
     return false;
   });
+
+  const renderTaskActionButtons = (item: typeof goal.tasks[number]) => (
+    <View style={{ alignSelf: "center", gap: 6 }}>
+      <Pressable
+        onPress={() => startEditingTask(item.id)}
+        hitSlop={8}
+        style={{
+          ...taskActionButtonStyle,
+          opacity: 0.55,
+        }}
+      >
+        <Ionicons name="create-outline" size={16} color={theme.textSecondary} />
+      </Pressable>
+      <Pressable
+        onPress={() => confirmDeleteTask(item.id, item.title)}
+        hitSlop={8}
+        style={{
+          ...taskActionButtonStyle,
+          opacity: 0.35,
+        }}
+      >
+        <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
+      </Pressable>
+    </View>
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
@@ -519,34 +551,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                       );
                     })()}
                   </View>
-                  <View style={{ alignSelf: "center", gap: 6 }}>
-                    <Pressable
-                      onPress={() => startEditingTask(item.id)}
-                      hitSlop={8}
-                      style={{
-                        alignSelf: "center",
-                        borderRadius: 9999,
-                        paddingHorizontal: 4,
-                        paddingVertical: 4,
-                        opacity: 0.55
-                      }}
-                    >
-                      <Ionicons name="create-outline" size={16} color={theme.textSecondary} />
-                    </Pressable>
-                    <Pressable
-                      onPress={() => confirmDeleteTask(item.id, item.title)}
-                      hitSlop={8}
-                      style={{
-                        alignSelf: "center",
-                        borderRadius: 9999,
-                        paddingHorizontal: 4,
-                        paddingVertical: 4,
-                        opacity: 0.35
-                      }}
-                    >
-                      <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
-                    </Pressable>
-                  </View>
+                  {renderTaskActionButtons(item)}
                 </View>
               </Pressable>
               {index < pendingTasks.length - 1 && <View style={{ height: 8 }} />}
@@ -638,34 +643,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                         );
                       })()}
                     </View>
-                    <View style={{ alignSelf: "center", gap: 6 }}>
-                      <Pressable
-                        onPress={() => startEditingTask(item.id)}
-                        hitSlop={8}
-                        style={{
-                          alignSelf: "center",
-                          borderRadius: 9999,
-                          paddingHorizontal: 4,
-                          paddingVertical: 4,
-                          opacity: 0.55
-                        }}
-                      >
-                        <Ionicons name="create-outline" size={16} color={theme.textSecondary} />
-                      </Pressable>
-                      <Pressable
-                        onPress={() => confirmDeleteTask(item.id, item.title)}
-                        hitSlop={8}
-                        style={{
-                          alignSelf: "center",
-                          borderRadius: 9999,
-                          paddingHorizontal: 4,
-                          paddingVertical: 4,
-                          opacity: 0.35
-                        }}
-                      >
-                        <Ionicons name="trash-outline" size={16} color={theme.textSecondary} />
-                      </Pressable>
-                    </View>
+                    {renderTaskActionButtons(item)}
                   </View>
                 </Pressable>
                 {index < completedTasks.length - 1 && <View style={{ height: 8 }} />}
