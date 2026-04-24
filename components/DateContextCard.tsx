@@ -3,6 +3,7 @@ import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { format, isToday } from "date-fns";
 import { useTheme } from "../contexts/ThemeContext";
+import IconButton from "./IconButton";
 
 interface DateContextCardProps {
   selectedDate: Date;
@@ -52,13 +53,7 @@ export default function DateContextCard({ selectedDate, onPress, onPreviousDay, 
             </Text>
           </View>
         </View>
-        <Pressable
-          onPress={onPress}
-          hitSlop={8}
-          style={{ padding: 4 }}
-        >
-          <Ionicons name="calendar-outline" size={18} color={theme.textSecondary} />
-        </Pressable>
+        <IconButton icon="calendar-outline" onPress={onPress} padded />
       </View>
 
       <View style={{ flexDirection: "row", gap: 10 }}>
