@@ -18,6 +18,12 @@ type IntroductionWizardProps = {
 
 const slides: Slide[] = [
   {
+    key: "welcome",
+    title: "Welcome! Let’s get you On Track",
+    text: "This quick walkthrough will show you how the app works using demo goals and sample progress, so everything makes sense right away.",
+    icon: "rocket-outline",
+  },
+  {
     key: "goals",
     title: "Goals are the big picture",
     text: "Each goal is something you care about improving. Under each goal, add small repeatable tasks that actually move it forward.",
@@ -37,9 +43,9 @@ const slides: Slide[] = [
   },
   {
     key: "reset",
-    title: "Reset when you are ready",
-    text: "After exploring, open Settings and tap Reset App Data to clear the demo goals and start fresh with your own tracking.",
-    icon: "refresh-outline",
+    title: "IMPORTANT! Reset when you are ready",
+    text: "These are intro goals so you can see how OnTrack is set up. When you are done exploring, open Settings and tap Reset App Data to clear the demo data and start fresh.",
+    icon: "warning-outline",
   },
 ];
 
