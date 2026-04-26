@@ -13,6 +13,7 @@ import OverviewScreen from "./components/OverviewScreen";
 import PrivacyScreen from "./components/PrivacyScreen";
 import InstructionsScreen from "./components/InstructionsScreen";
 import IntroductionWizard from "./components/IntroductionWizard";
+import { ONBOARDING_STORAGE_KEY, shouldShowOnboarding } from "./onboarding";
 import { useStore } from "./store";
 
 type RootStackParamList = {
@@ -25,7 +26,6 @@ type RootStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const ONBOARDING_STORAGE_KEY = "ontrack-onboarding-complete";
 
 function ThemedNavigation() {
   const { theme, isDark } = useTheme();
@@ -47,7 +47,12 @@ function ThemedNavigation() {
         return;
       }
 
-      if (hasCompletedOnboarding || hasExistingGoals) {
+      const shouldIntroduceUser = shouldShowOnboarding({
+        hasCompletedOnboarding: Boolean(hasCompletedOnboarding),
+        hasExistingGoals,
+      });
+
+      if (!shouldIntroduceUser) {
         setShowIntroduction(false);
         setHasCheckedIntroduction(true);
         return;
@@ -74,7 +79,7 @@ function ThemedNavigation() {
     return null;
   }
 
-  if (showIntroduction && goals.length > 0) {
+  if (showIntroduction) {
     return (
       <>
         <IntroductionWizard onDone={handleIntroductionDone} />
