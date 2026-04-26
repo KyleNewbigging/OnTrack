@@ -1,10 +1,11 @@
 import React from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Text, View, Pressable, TextInput } from "react-native";
+import { Text, View, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useStore } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import { haptics } from "../utils/haptics";
+import LabeledTextField from "./LabeledTextField";
 
 type RootStackParamList = {
   Home: undefined;
@@ -24,38 +25,18 @@ export default function NewGoalScreen({ navigation }: NewGoalProps) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
       <View style={{ padding: 16, gap: 12 }}>
-        {/* Label + Input for Goal Title */}
-        <Text style={{ fontWeight: "700", fontSize: 16, color: theme.text }}>Goal Title</Text>
-        <TextInput
+        <LabeledTextField
+          label="Goal Title"
           placeholder="e.g., Fitness"
           value={title}
           onChangeText={setTitle}
-          style={{
-            borderWidth: 1,
-            borderColor: theme.border,
-            borderRadius: 8,
-            padding: 10,
-            backgroundColor: theme.surface,
-            color: theme.text
-          }}
-          placeholderTextColor={theme.textSecondary}
         />
 
-        {/* Label + Input for Target */}
-        <Text style={{ fontWeight: "700", fontSize: 16, color: theme.text }}>Target (optional)</Text>
-        <TextInput
+        <LabeledTextField
+          label="Target (optional)"
           placeholder="e.g., 200 lbs, 10% BF"
           value={target}
           onChangeText={setTarget}
-          style={{
-            borderWidth: 1,
-            borderColor: theme.border,
-            borderRadius: 8,
-            padding: 10,
-            backgroundColor: theme.surface,
-            color: theme.text
-          }}
-          placeholderTextColor={theme.textSecondary}
         />
 
         <Pressable
