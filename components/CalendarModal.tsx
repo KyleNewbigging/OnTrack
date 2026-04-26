@@ -17,6 +17,7 @@ import {
 } from "date-fns";
 import { useTheme } from "../contexts/ThemeContext";
 import { haptics } from "../utils/haptics";
+import IconButton from "./IconButton";
 
 interface CalendarModalProps {
   visible: boolean;
@@ -97,43 +98,33 @@ export default function CalendarModal({
               <Text style={{ color: theme.text, fontSize: 18, fontWeight: "700" }}>Choose a date</Text>
               <Text style={{ color: theme.textSecondary, marginTop: 2 }}>Past days and today are editable.</Text>
             </View>
-            <Pressable
+            <IconButton
+              icon="close-outline"
+              size={22}
               onPress={() => {
                 void haptics.tap();
                 onClose();
               }}
-              hitSlop={8}
-              style={{ padding: 4 }}
-            >
-              <Ionicons name="close-outline" size={22} color={theme.textSecondary} />
-            </Pressable>
+              padded
+            />
           </View>
 
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <Pressable
+            <IconButton
+              icon="chevron-back"
               onPress={() => {
                 void haptics.tap();
                 setDisplayMonth((current) => subMonths(current, 1));
               }}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: theme.background,
-                borderWidth: 1,
-                borderColor: theme.border,
-              }}
-            >
-              <Ionicons name="chevron-back" size={18} color={theme.text} />
-            </Pressable>
+              circular
+            />
 
             <Text style={{ color: theme.text, fontSize: 16, fontWeight: "700" }}>
               {format(displayMonth, "MMMM yyyy")}
             </Text>
 
-            <Pressable
+            <IconButton
+              icon="chevron-forward"
               onPress={() => {
                 if (!canGoForward) {
                   void haptics.warning();
@@ -143,20 +134,9 @@ export default function CalendarModal({
                 void haptics.tap();
                 setDisplayMonth((current) => addMonths(current, 1));
               }}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: theme.background,
-                borderWidth: 1,
-                borderColor: theme.border,
-                opacity: canGoForward ? 1 : 0.35,
-              }}
-            >
-              <Ionicons name="chevron-forward" size={18} color={theme.text} />
-            </Pressable>
+              circular
+              disabled={!canGoForward}
+            />
           </View>
 
           <View style={{ flexDirection: "row" }}>
