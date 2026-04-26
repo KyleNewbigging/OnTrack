@@ -1,4 +1,4 @@
-import { getCustomFrequencyProgress, getSampleGoals } from './store';
+import { getCustomFrequencyProgress, getSampleGoals, isOnceTaskCompletedOnDate } from './store';
 import { Task } from './types';
 
 describe('getCustomFrequencyProgress', () => {
@@ -57,5 +57,29 @@ describe('getSampleGoals', () => {
       .filter((completion) => completion.toDateString() === todayKey).length;
 
     expect(todayCompletionCount).toBeGreaterThan(0);
+  });
+});
+
+describe('isOnceTaskCompletedOnDate', () => {
+  it('returns true when a once task was completed on the selected day', () => {
+    const task: Task = {
+      id: 'task-3',
+      title: 'Book dentist appointment',
+      frequency: 'once',
+      completions: [new Date('2026-04-21T12:00:00.000Z')],
+    };
+
+    expect(isOnceTaskCompletedOnDate(task, new Date('2026-04-21T18:00:00.000Z'))).toBe(true);
+  });
+
+  it('returns false on later days even if the once task was completed in the past', () => {
+    const task: Task = {
+      id: 'task-4',
+      title: 'Replace passport photo',
+      frequency: 'once',
+      completions: [new Date('2026-04-20T12:00:00.000Z')],
+    };
+
+    expect(isOnceTaskCompletedOnDate(task, new Date('2026-04-21T12:00:00.000Z'))).toBe(false);
   });
 });
