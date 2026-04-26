@@ -1,4 +1,4 @@
-import { getCustomFrequencyProgress } from './store';
+import { getCustomFrequencyProgress, getSampleGoals } from './store';
 import { Task } from './types';
 
 describe('getCustomFrequencyProgress', () => {
@@ -43,5 +43,19 @@ describe('getCustomFrequencyProgress', () => {
     expect(progress.completed).toBe(4);
     expect(progress.target).toBe(5);
     expect(progress.achieved).toBe(false);
+  });
+});
+
+describe('getSampleGoals', () => {
+  it('includes some demo completions for today so first-launch progress is visible', () => {
+    const todayKey = new Date().toDateString();
+    const goals = getSampleGoals();
+
+    const todayCompletionCount = goals
+      .flatMap((goal) => goal.tasks)
+      .flatMap((task) => task.completions)
+      .filter((completion) => completion.toDateString() === todayKey).length;
+
+    expect(todayCompletionCount).toBeGreaterThan(0);
   });
 });

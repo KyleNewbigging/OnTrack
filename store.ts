@@ -306,7 +306,10 @@ function makeId() {
 }
 
 // Sample data for development/testing
-function getSampleGoals(): Goal[] {
+export function getSampleGoals(): Goal[] {
+    const today = normalizeDate(new Date());
+    const daysAgo = (days: number) => normalizeDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - days));
+
     return [
         {
             id: makeId(),
@@ -319,9 +322,13 @@ function getSampleGoals(): Goal[] {
                     title: "Morning workout",
                     frequency: "daily",
                     completions: [
-                        // 7-day streak ending today (Sept 26-Oct 2, 2025)
-                        new Date(2025, 8, 26), new Date(2025, 8, 27), new Date(2025, 8, 28), 
-                        new Date(2025, 8, 29), new Date(2025, 8, 30), new Date(2025, 9, 1), new Date(2025, 9, 2),
+                        today,
+                        daysAgo(1),
+                        daysAgo(2),
+                        daysAgo(3),
+                        daysAgo(4),
+                        daysAgo(5),
+                        daysAgo(6),
                         // Some earlier scattered completions
                         new Date(2025, 8, 20), new Date(2025, 8, 22), new Date(2025, 8, 24),
                         new Date(2025, 8, 15), new Date(2025, 8, 17), new Date(2025, 8, 19),
@@ -345,8 +352,7 @@ function getSampleGoals(): Goal[] {
                     frequency: "custom",
                     customFrequency: { type: "weekly", target: 3 },
                     completions: [
-                        // Current week (Sept 30-Oct 6): 2/3 so far
-                        new Date(2025, 8, 30), new Date(2025, 9, 2),
+                        today, daysAgo(2),
                         // Week 4 (Sept 23-29): 3/3 ✓
                         new Date(2025, 8, 23), new Date(2025, 8, 25), new Date(2025, 8, 27),
                         // Week 3 (Sept 16-22): 3/3 ✓
@@ -364,7 +370,7 @@ function getSampleGoals(): Goal[] {
                     customFrequency: { type: "weekly", target: 2 },
                     completions: [
                         // Current week: 1/2 so far
-                        new Date(2025, 9, 1),
+                        daysAgo(1),
                         // 3-week streak of hitting 2/week
                         new Date(2025, 8, 23), new Date(2025, 8, 26),
                         new Date(2025, 8, 16), new Date(2025, 8, 19),
@@ -377,7 +383,7 @@ function getSampleGoals(): Goal[] {
                     frequency: "weekly",
                     completions: [
                         // 7-week streak! Each completion is one per week
-                        new Date(2025, 8, 28),  // Current week (Sept 28-Oct 4) - Sunday
+                        daysAgo(3),
                         new Date(2025, 8, 21),  // Week of Sept 21-27
                         new Date(2025, 8, 14),  // Week of Sept 14-20
                         new Date(2025, 8, 7),   // Week of Sept 7-13
@@ -399,6 +405,9 @@ function getSampleGoals(): Goal[] {
                     title: "Duolingo practice",
                     frequency: "daily",
                     completions: [
+                        today,
+                        daysAgo(1),
+                        daysAgo(2),
                         new Date(2025, 6, 15), new Date(2025, 6, 16), new Date(2025, 6, 17), new Date(2025, 6, 18), new Date(2025, 6, 19),
                         new Date(2025, 6, 20), new Date(2025, 6, 21), new Date(2025, 6, 22), new Date(2025, 6, 23), new Date(2025, 6, 24),
                         new Date(2025, 6, 25), new Date(2025, 6, 26), new Date(2025, 6, 27), new Date(2025, 6, 28), new Date(2025, 6, 29),
@@ -442,6 +451,7 @@ function getSampleGoals(): Goal[] {
                     title: "Drink 8 glasses of water",
                     frequency: "daily",
                     completions: [
+                        today,
                         new Date("2025-08-02"), new Date("2025-08-15"), new Date("2025-09-01"), new Date("2025-09-20")
                     ]
                 },
@@ -450,7 +460,7 @@ function getSampleGoals(): Goal[] {
                     title: "Meditate for 10 minutes",
                     frequency: "daily",
                     completions: [
-                        new Date("2025-08-10"), new Date("2025-09-05")
+                        daysAgo(1), new Date("2025-08-10"), new Date("2025-09-05")
                     ]
                 },
                 {
@@ -475,7 +485,7 @@ function getSampleGoals(): Goal[] {
                     frequency: "daily",
                     completions: [
                         // 3-day streak ending today
-                        new Date(2025, 8, 30), new Date(2025, 9, 1), new Date(2025, 9, 2),
+                        today, daysAgo(1), daysAgo(2),
                         // Some scattered earlier dates
                         new Date("2025-09-25"), new Date("2025-09-26"), new Date("2025-09-28"),
                         new Date("2025-09-20"), new Date("2025-09-22"),
@@ -533,6 +543,7 @@ interface State {
     toggleTaskCompletion: (goalId: string, taskId: string, date?: Date) => void;
     completionsByDate: () => Record<string, number>;
     deleteGoal: (goalId: string) => void;
+    seedDemoData: () => void;
     resetAppData: () => void;
 }
 
@@ -702,6 +713,18 @@ export const useStore = create<State>()(
                 set((s) => ({
                     goals: s.goals.filter((g) => g.id !== goalId),
                 }));
+            },
+            seedDemoData: () => {
+                set((s) => {
+                    if (s.goals.length > 0) {
+                        return s;
+                    }
+
+                    return {
+                        goals: getSampleGoals(),
+                        selectedDate: normalizeDate(new Date()),
+                    };
+                });
             },
             resetAppData: () => {
                 set({
