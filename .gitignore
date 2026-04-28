@@ -43,3 +43,5 @@ node_modules/
 .expo/
 dist/
 .DS_Store
+.openclaw
+.claude
