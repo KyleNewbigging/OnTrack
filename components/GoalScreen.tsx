@@ -1,5 +1,4 @@
 import React from "react";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, TextInput, ScrollView, Modal, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,15 +7,9 @@ import { useTheme } from "../contexts/ThemeContext";
 import { format, startOfWeek, endOfWeek, isWithinInterval, isToday } from "date-fns";
 import { Frequency, CustomFrequency } from "../types";
 import { haptics } from "../utils/haptics";
+import type { RootStackScreenProps } from "../navigation/types";
 
-type RootStackParamList = {
-  Home: undefined;
-  Goal: { goalId: string };
-  NewGoal: undefined;
-  Consistency: { goalId: string };
-};
-
-type GoalProps = NativeStackScreenProps<RootStackParamList, "Goal">;
+type GoalProps = RootStackScreenProps<"Goal">;
 
 export default function GoalScreen({ navigation, route }: GoalProps) {
   const MAX_WEEKLY_CUSTOM_TARGET = 7;

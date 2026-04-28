@@ -10,15 +10,7 @@ import NewGoalScreen from "./components/NewGoalScreen";
 import OverviewScreen from "./components/OverviewScreen";
 import PrivacyScreen from "./components/PrivacyScreen";
 import InstructionsScreen from "./components/InstructionsScreen";
-
-type RootStackParamList = {
-  Home: undefined;
-  Goal: { goalId: string };
-  NewGoal: undefined;
-  Consistency: { goalId: string };
-  Privacy: undefined;
-  Instructions: undefined;
-};
+import type { RootStackParamList } from "./navigation/types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

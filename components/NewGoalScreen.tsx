@@ -1,19 +1,12 @@
 import React from "react";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useStore } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import { haptics } from "../utils/haptics";
+import type { RootStackScreenProps } from "../navigation/types";
 
-type RootStackParamList = {
-  Home: undefined;
-  Goal: { goalId: string };
-  NewGoal: undefined;
-  Consistency: { goalId: string };
-};
-
-type NewGoalProps = NativeStackScreenProps<RootStackParamList, "NewGoal">;
+type NewGoalProps = RootStackScreenProps<"NewGoal">;
 
 export default function NewGoalScreen({ navigation }: NewGoalProps) {
   const addGoal = useStore((s) => s.addGoal);

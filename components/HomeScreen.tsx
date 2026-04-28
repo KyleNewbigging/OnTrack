@@ -1,5 +1,4 @@
 import React, { useState, useLayoutEffect } from "react";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, Pressable, ScrollView, Alert, Switch, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from '@expo/vector-icons';
@@ -9,17 +8,9 @@ import RadarChart from "./RadarChart";
 import DateContextCard from "./DateContextCard";
 import CalendarModal from "./CalendarModal";
 import { haptics } from "../utils/haptics";
+import type { RootStackScreenProps } from "../navigation/types";
 
-type RootStackParamList = {
-  Home: undefined;
-  Goal: { goalId: string };
-  NewGoal: undefined;
-  Consistency: { goalId: string };
-  Privacy: undefined;
-  Instructions: undefined;
-};
-
-type HomeProps = NativeStackScreenProps<RootStackParamList, "Home">;
+type HomeProps = RootStackScreenProps<"Home">;
 
 export default function HomeScreen({ navigation }: HomeProps) {
   const goals = useStore((s) => s.goals);

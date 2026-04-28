@@ -1,5 +1,4 @@
 import React from "react";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,15 +7,9 @@ import { useStore, getCustomFrequencyProgress, getGoalStreak } from "../store";
 import { useTheme } from "../contexts/ThemeContext";
 import Heatmap from "./Heatmap";
 import { format } from "date-fns";
+import type { RootStackScreenProps } from "../navigation/types";
 
-type RootStackParamList = {
-  Home: undefined;
-  Goal: { goalId: string };
-  NewGoal: undefined;
-  Consistency: { goalId: string };
-};
-
-type OverviewProps = NativeStackScreenProps<RootStackParamList, "Consistency">;
+type OverviewProps = RootStackScreenProps<"Consistency">;
 
 export default function OverviewScreen({ navigation, route }: OverviewProps) {
   const streakBadgeSize = 24;
