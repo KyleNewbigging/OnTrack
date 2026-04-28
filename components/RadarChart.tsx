@@ -15,6 +15,8 @@ interface RadarChartProps {
   mode?: RadarChartMode;
 }
 
+const CHART_TITLE = "Goal Radar";
+
 const getDailyTrendScore = (completionDates: Date[], startDate: Date, referenceDate: Date) => {
   const days = Math.max(1, differenceInCalendarDays(referenceDate, startDate) + 1);
   return Math.min(1, completionDates.length / days);
@@ -39,32 +41,38 @@ const getCustomTrendScore = (completionDates: Date[], target: number, periodType
 
 export default function RadarChart({ goals, size = 200, referenceDate = new Date(), mode = "current" }: RadarChartProps) {
   const { theme, isDark } = useTheme();
+
+  const renderChartContainer = (children: React.ReactNode) => (
+    <View style={{
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: 10,
+      padding: 16,
+      backgroundColor: theme.surface,
+      alignItems: "center"
+    }}>
+      <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 12, color: theme.text }}>
+        {CHART_TITLE}
+      </Text>
+
+      {children}
+    </View>
+  );
+
+  const renderEmptyChart = (message: string, helperText: string) => renderChartContainer(
+    <View style={{
+      width: size,
+      height: size,
+      justifyContent: "center",
+      alignItems: "center",
+    }}>
+      <Text style={{ color: theme.textSecondary, fontSize: 14 }}>{message}</Text>
+      <Text style={{ color: theme.textSecondary, fontSize: 12 }}>{helperText}</Text>
+    </View>
+  );
   
   if (goals.length === 0) {
-    return (
-      <View style={{ 
-        borderWidth: 1,
-        borderColor: theme.border,
-        borderRadius: 10,
-        padding: 16,
-        backgroundColor: theme.surface,
-        alignItems: "center"
-      }}>
-        <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 12, color: theme.text }}>
-          Goal Consistency Overview
-        </Text>
-
-        <View style={{ 
-          width: size, 
-          height: size, 
-          justifyContent: "center", 
-          alignItems: "center",
-        }}>
-          <Text style={{ color: theme.textSecondary, fontSize: 14 }}>No goals yet</Text>
-          <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Create goals to see radar chart</Text>
-        </View>
-      </View>
-    );
+    return renderEmptyChart("No goals yet", "Create goals to see radar chart");
   }
 
   const centerX = size / 2;
@@ -158,30 +166,7 @@ export default function RadarChart({ goals, size = 200, referenceDate = new Date
     .filter((goal): goal is { title: string; percentage: number } => goal !== null);
 
   if (goalData.length === 0) {
-    return (
-      <View style={{ 
-        borderWidth: 1,
-        borderColor: theme.border,
-        borderRadius: 10,
-        padding: 16,
-        backgroundColor: theme.surface,
-        alignItems: "center"
-      }}>
-        <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 12, color: theme.text }}>
-          Goal Consistency Overview
-        </Text>
-
-        <View style={{ 
-          width: size, 
-          height: size, 
-          justifyContent: "center", 
-          alignItems: "center",
-        }}>
-          <Text style={{ color: theme.textSecondary, fontSize: 14 }}>No goals for this date</Text>
-          <Text style={{ color: theme.textSecondary, fontSize: 12 }}>Try a later date to see the radar chart</Text>
-        </View>
-      </View>
-    );
+    return renderEmptyChart("No goals for this date", "Try a later date to see the radar chart");
   }
 
   const angleStep = (2 * Math.PI) / goalData.length;
@@ -223,19 +208,8 @@ export default function RadarChart({ goals, size = 200, referenceDate = new Date
   // Create polygon path string
   const polygonPoints = dataPoints.map(point => `${point.x},${point.y}`).join(' ');
 
-  return (
-    <View style={{ 
-      borderWidth: 1, 
-      borderColor: theme.border, 
-      borderRadius: 10, 
-      padding: 16,
-      backgroundColor: theme.surface,
-      alignItems: "center"
-    }}>
-      <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 12, color: theme.text }}>
-        Goal Consistency Overview
-      </Text>
-      
+  return renderChartContainer(
+    <>
       <Svg width={size} height={size}>
         {/* Grid circles */}
         {gridLevels.map((level, index) => (
@@ -327,6 +301,6 @@ export default function RadarChart({ goals, size = 200, referenceDate = new Date
           </View>
         ))}
       </View>
-    </View>
+    </>
   );
 }
