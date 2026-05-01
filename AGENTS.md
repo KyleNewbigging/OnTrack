@@ -9,12 +9,13 @@ Ship small, reliable improvements to OnTrack through reviewable pull requests.
 ## Workflow
 
 1. Prefer an open GitHub issue when one is available.
-2. Create a dedicated branch for the issue or task.
-3. Make the smallest reasonable change that fully solves the task.
-4. Run lightweight validation when available.
-5. Commit the work.
-6. Push the branch.
-7. Open a pull request and clearly identify as Hugo.
+2. Read the issue body and issue comments before starting implementation.
+3. Create a dedicated branch for the issue or task.
+4. Make the smallest reasonable change that fully solves the task.
+5. Run lightweight validation when available.
+6. Commit the work.
+7. Push the branch.
+8. Open a pull request and clearly identify as Hugo.
 
 ## Hard rules
 
@@ -45,4 +46,6 @@ Also include:
 ## Validation
 
 When relevant, run the lightest useful checks available for the repo.
+Add unit tests whenever reasonably possible, especially around bug-prone logic and regressions.
+Treat existing tests as guards against unintended behavior changes. Do not change or remove tests just to make a new implementation pass unless the behavior change is intentional and clearly called out.
 If validation is not available, say so clearly in the PR or handoff.

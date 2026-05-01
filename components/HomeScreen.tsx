@@ -27,6 +27,7 @@ type HomeProps = NativeStackScreenProps<RootStackParamList, "Home">;
 export default function HomeScreen({ navigation }: HomeProps) {
   const goals = useStore((s) => s.goals);
   const selectedDate = useStore((s) => s.selectedDate);
+  const account = useStore((s) => s.account);
   const setSelectedDate = useStore((s) => s.setSelectedDate);
   const reorderGoals = useStore((s) => s.reorderGoals);
   const resetAppData = useStore((s) => s.resetAppData);
@@ -412,6 +413,27 @@ export default function HomeScreen({ navigation }: HomeProps) {
                 thumbColor={isDark ? theme.surface : theme.background}
               />
             </View>
+
+            {account ? (
+              <View
+                style={{
+                  backgroundColor: theme.background,
+                  padding: 12,
+                  borderRadius: 10,
+                  marginBottom: 12,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                }}
+              >
+                <Text style={{ color: theme.text, fontWeight: "600", fontSize: 16 }}>Account</Text>
+                <Text style={{ color: theme.textSecondary, marginTop: 4 }}>
+                  {account.displayName} @{account.username}
+                </Text>
+                <Text style={{ color: theme.textSecondary, marginTop: 4 }}>
+                  This profile will be used for future sync and communication features.
+                </Text>
+              </View>
+            ) : null}
 
             <Pressable
               onPress={() => {
