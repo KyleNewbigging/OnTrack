@@ -1,5 +1,5 @@
-import { getCustomFrequencyProgress, getSampleGoals, isOnceTaskCompletedOnDate, useStore } from './store';
-import { Task } from './types';
+import { getCustomFrequencyProgress, getSampleGoals, isOnceTaskCompletedOnDate, useStore } from '../store';
+import { Task } from '../types';
 
 describe('getCustomFrequencyProgress', () => {
   it('counts weekly custom completions inside the active week', () => {

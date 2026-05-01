@@ -70,6 +70,7 @@ OnTrack/
 ├── components/   # UI screens and reusable visual components
 ├── contexts/     # React context providers
 ├── docs/         # Supporting project documentation
+├── tests/        # Jest unit tests
 ├── scripts/      # Utility scripts
 ├── App.tsx       # App entry component
 ├── store.ts      # Zustand state and persistence

@@ -1,4 +1,4 @@
-import { shouldShowOnboarding } from "./onboarding";
+import { shouldShowOnboarding } from "../onboarding";
 
 describe("shouldShowOnboarding", () => {
   it("shows onboarding for a true first launch", () => {
