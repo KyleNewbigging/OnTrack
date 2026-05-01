@@ -1,4 +1,4 @@
-import { getCustomFrequencyProgress, getSampleGoals, isOnceTaskCompletedOnDate } from './store';
+import { getCustomFrequencyProgress, getSampleGoals, isOnceTaskCompletedOnDate, useStore } from './store';
 import { Task } from './types';
 
 describe('getCustomFrequencyProgress', () => {
@@ -81,5 +81,62 @@ describe('isOnceTaskCompletedOnDate', () => {
     };
 
     expect(isOnceTaskCompletedOnDate(task, new Date('2026-04-21T12:00:00.000Z'))).toBe(false);
+  });
+});
+
+describe('updateGoal', () => {
+  const originalState = useStore.getState();
+
+  afterEach(() => {
+    useStore.setState(originalState, true);
+  });
+
+  it('updates a goal target without affecting its tasks', () => {
+    useStore.setState({
+      ...originalState,
+      goals: [
+        {
+          id: 'goal-1',
+          title: 'Fitness',
+          target: 'Run a 5k',
+          createdAt: Date.now(),
+          tasks: [
+            {
+              id: 'task-1',
+              title: 'Run',
+              frequency: 'daily',
+              completions: [new Date('2026-04-20T12:00:00.000Z')],
+            },
+          ],
+        },
+      ],
+    });
+
+    useStore.getState().updateGoal('goal-1', { target: 'Run a 10k' });
+
+    const updatedGoal = useStore.getState().goals[0];
+    expect(updatedGoal.target).toBe('Run a 10k');
+    expect(updatedGoal.tasks).toHaveLength(1);
+    expect(updatedGoal.tasks[0].title).toBe('Run');
+    expect(updatedGoal.tasks[0].completions).toHaveLength(1);
+  });
+
+  it('clears a goal target when null is provided', () => {
+    useStore.setState({
+      ...originalState,
+      goals: [
+        {
+          id: 'goal-2',
+          title: 'Nutrition',
+          target: '2000 calories',
+          createdAt: Date.now(),
+          tasks: [],
+        },
+      ],
+    });
+
+    useStore.getState().updateGoal('goal-2', { target: null });
+
+    expect(useStore.getState().goals[0].target).toBeUndefined();
   });
 });

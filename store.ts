@@ -547,7 +547,7 @@ interface State {
     addGoal: (title: string, target?: string) => void;
     reorderGoals: (goalIdsInOrder: string[]) => void;
     setSelectedDate: (date: Date) => void;
-    updateGoal: (goalId: string, updates: { title?: string; target?: string }) => void;
+    updateGoal: (goalId: string, updates: { title?: string; target?: string | null }) => void;
     addTask: (goalId: string, title: string, frequency: Frequency, customFrequency?: CustomFrequency) => void;
     updateTask: (goalId: string, taskId: string, updates: { title?: string; frequency?: Frequency; customFrequency?: CustomFrequency | undefined }) => void;
     reorderTasks: (goalId: string, taskIdsInOrder: string[]) => void;
@@ -605,7 +605,11 @@ export const useStore = create<State>()(
                             ? {
                                 ...g,
                                 title: updates.title ?? g.title,
-                                target: updates.target !== undefined ? updates.target : g.target,
+                                target: updates.target === null
+                                    ? undefined
+                                    : updates.target !== undefined
+                                      ? updates.target
+                                      : g.target,
                             }
                             : g
                     ),

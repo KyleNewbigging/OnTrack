@@ -38,29 +38,35 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const [customFrequency, setCustomFrequency] = React.useState<CustomFrequency>({ type: "weekly", target: 3 });
   const [isEditing, setIsEditing] = React.useState(false);
   const [editingTaskId, setEditingTaskId] = React.useState<string | null>(null);
-  const [isEditingGoalTitle, setIsEditingGoalTitle] = React.useState(false);
+  const [isEditingGoalDetails, setIsEditingGoalDetails] = React.useState(false);
   const [goalTitleDraft, setGoalTitleDraft] = React.useState(goal.title);
+  const [goalTargetDraft, setGoalTargetDraft] = React.useState(goal.target ?? "");
   const [isReorderingTasks, setIsReorderingTasks] = React.useState(false);
 
   if (!goal) return <Text>Not found</Text>;
 
   React.useEffect(() => {
-    if (!isEditingGoalTitle) {
+    if (!isEditingGoalDetails) {
       setGoalTitleDraft(goal.title);
+      setGoalTargetDraft(goal.target ?? "");
     }
-  }, [goal.title, isEditingGoalTitle]);
+  }, [goal.title, goal.target, isEditingGoalDetails]);
 
-  const saveGoalTitle = () => {
+  const saveGoalDetails = () => {
     const trimmedTitle = goalTitleDraft.trim();
+    const trimmedTarget = goalTargetDraft.trim();
 
     if (!trimmedTitle) {
       void haptics.error();
       return;
     }
 
-    updateGoal(goalId, { title: trimmedTitle });
+    updateGoal(goalId, {
+      title: trimmedTitle,
+      target: trimmedTarget ? trimmedTarget : null,
+    });
     void haptics.success();
-    setIsEditingGoalTitle(false);
+    setIsEditingGoalDetails(false);
   };
 
   const isCompletedToday = (dates: Date[], referenceDate: Date) =>
@@ -225,7 +231,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          {isEditingGoalTitle ? (
+          {isEditingGoalDetails ? (
             <>
               <TextInput
                 value={goalTitleDraft}
@@ -246,10 +252,10 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 placeholderTextColor={theme.textSecondary}
                 autoFocus
                 returnKeyType="done"
-                onSubmitEditing={saveGoalTitle}
+                onSubmitEditing={saveGoalDetails}
               />
               <Pressable
-                onPress={saveGoalTitle}
+                onPress={saveGoalDetails}
                 hitSlop={8}
                 style={{ padding: 6 }}
               >
@@ -259,7 +265,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 onPress={() => {
                   void haptics.tap();
                   setGoalTitleDraft(goal.title);
-                  setIsEditingGoalTitle(false);
+                  setGoalTargetDraft(goal.target ?? "");
+                  setIsEditingGoalDetails(false);
                 }}
                 hitSlop={8}
                 style={{ padding: 6 }}
@@ -274,7 +281,8 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 onPress={() => {
                   void haptics.tap();
                   setGoalTitleDraft(goal.title);
-                  setIsEditingGoalTitle(true);
+                  setGoalTargetDraft(goal.target ?? "");
+                  setIsEditingGoalDetails(true);
                 }}
                 hitSlop={8}
                 style={{
@@ -293,7 +301,33 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             </>
           )}
         </View>
-        {goal.target && <Text style={{ color: theme.textSecondary }}>Target: {goal.target}</Text>}
+        {isEditingGoalDetails ? (
+          <View style={{ gap: 8 }}>
+            <TextInput
+              value={goalTargetDraft}
+              onChangeText={setGoalTargetDraft}
+              style={{
+                fontSize: 15,
+                color: theme.text,
+                borderWidth: 1,
+                borderColor: theme.border,
+                borderRadius: 10,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                backgroundColor: theme.surface,
+              }}
+              placeholder="Optional target"
+              placeholderTextColor={theme.textSecondary}
+              returnKeyType="done"
+              onSubmitEditing={saveGoalDetails}
+            />
+            <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+              Leave blank to clear the target.
+            </Text>
+          </View>
+        ) : goal.target ? (
+          <Text style={{ color: theme.textSecondary }}>Target: {goal.target}</Text>
+        ) : null}
         <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
           <Pressable
             onPress={() => {
