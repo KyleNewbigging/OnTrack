@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { Goal, Frequency, CustomFrequency, Task } from "./types";
+import { Goal, Frequency, CustomFrequency, Task, UserAccount } from "./types";
 import { format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, differenceInCalendarDays } from "date-fns";
+import { normalizeAccountDraft } from "./account";
 
 // Date utility functions
 const normalizeDate = (date: Date): Date => startOfDay(date);
@@ -544,6 +545,7 @@ export const getCurrentMode = () => CURRENT_MODE;
 interface State {
     goals: Goal[];
     selectedDate: Date;
+    account: UserAccount | null;
     addGoal: (title: string, target?: string) => void;
     reorderGoals: (goalIdsInOrder: string[]) => void;
     setSelectedDate: (date: Date) => void;
@@ -557,6 +559,7 @@ interface State {
     deleteGoal: (goalId: string) => void;
     seedDemoData: () => void;
     resetAppData: () => void;
+    createAccount: (displayName: string, username?: string, email?: string) => void;
 }
 
 // Get initial goals based on store mode
@@ -580,6 +583,7 @@ export const useStore = create<State>()(
         (set, get) => ({
             goals: getInitialGoals(), // Dynamic initialization based on store mode
             selectedDate: normalizeDate(new Date()),
+            account: null,
 
             addGoal: (title, target) =>
                 set((s) => ({
@@ -743,9 +747,27 @@ export const useStore = create<State>()(
                 });
             },
             resetAppData: () => {
-                set({
+                set((s) => ({
                     goals: getInitialGoals(),
                     selectedDate: normalizeDate(new Date()),
+                    account: s.account,
+                }));
+            },
+            createAccount: (displayName, username, email) => {
+                const normalizedAccount = normalizeAccountDraft(displayName, username, email);
+
+                if (!normalizedAccount.displayName) {
+                    return;
+                }
+
+                set({
+                    account: {
+                        id: makeId(),
+                        displayName: normalizedAccount.displayName,
+                        username: normalizedAccount.username,
+                        email: normalizedAccount.email,
+                        createdAt: Date.now(),
+                    },
                 });
             },
         }),

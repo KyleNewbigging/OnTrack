@@ -84,6 +84,46 @@ describe('isOnceTaskCompletedOnDate', () => {
   });
 });
 
+describe('account setup state', () => {
+  afterEach(() => {
+    useStore.setState({
+      goals: [],
+      selectedDate: new Date('2026-05-01T12:00:00.000Z'),
+      account: null,
+    });
+  });
+
+  it('creates a normalized account profile for future sync and communication features', () => {
+    useStore.getState().createAccount(' Adam Lin ', ' Adam.Chat ', ' Adam@Example.com ');
+
+    const account = useStore.getState().account;
+
+    expect(account).toMatchObject({
+      displayName: 'Adam Lin',
+      username: 'adam.chat',
+      email: 'adam@example.com',
+    });
+    expect(account?.id).toBeTruthy();
+  });
+
+  it('keeps the account profile when resetting app data', () => {
+    useStore.getState().createAccount('Adam Lin', 'adam', 'adam@example.com');
+    useStore.setState({
+      goals: getSampleGoals(),
+      selectedDate: new Date('2026-04-20T12:00:00.000Z'),
+    });
+
+    useStore.getState().resetAppData();
+
+    expect(useStore.getState().goals).toEqual([]);
+    expect(useStore.getState().account).toMatchObject({
+      displayName: 'Adam Lin',
+      username: 'adam',
+      email: 'adam@example.com',
+    });
+  });
+});
+
 describe('updateGoal', () => {
   const originalState = useStore.getState();
 

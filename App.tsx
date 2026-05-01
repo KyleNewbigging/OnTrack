@@ -13,7 +13,9 @@ import OverviewScreen from "./components/OverviewScreen";
 import PrivacyScreen from "./components/PrivacyScreen";
 import InstructionsScreen from "./components/InstructionsScreen";
 import IntroductionWizard from "./components/IntroductionWizard";
+import AccountSetupScreen from "./components/AccountSetupScreen";
 import { ONBOARDING_STORAGE_KEY, shouldShowOnboarding } from "./onboarding";
+import { shouldPromptForAccountSetup } from "./account";
 import { useStore } from "./store";
 
 type RootStackParamList = {
@@ -30,7 +32,9 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function ThemedNavigation() {
   const { theme, isDark } = useTheme();
   const goals = useStore((s) => s.goals);
+  const account = useStore((s) => s.account);
   const seedDemoData = useStore((s) => s.seedDemoData);
+  const createAccount = useStore((s) => s.createAccount);
   const [showIntroduction, setShowIntroduction] = React.useState(false);
   const [hasCheckedIntroduction, setHasCheckedIntroduction] = React.useState(false);
 
@@ -75,6 +79,19 @@ function ThemedNavigation() {
     setShowIntroduction(false);
   }, []);
 
+  const handleAccountSetupDone = React.useCallback(({
+    displayName,
+    username,
+    email,
+  }: {
+    displayName: string;
+    username: string;
+    email: string;
+    password: string;
+  }) => {
+    createAccount(displayName, username, email);
+  }, [createAccount]);
+
   if (!hasCheckedIntroduction) {
     return null;
   }
@@ -83,6 +100,15 @@ function ThemedNavigation() {
     return (
       <>
         <IntroductionWizard onDone={handleIntroductionDone} />
+        <StatusBar style={isDark ? "light" : "dark"} />
+      </>
+    );
+  }
+
+  if (shouldPromptForAccountSetup(account)) {
+    return (
+      <>
+        <AccountSetupScreen onSubmit={handleAccountSetupDone} hasExistingData={goals.length > 0} />
         <StatusBar style={isDark ? "light" : "dark"} />
       </>
     );

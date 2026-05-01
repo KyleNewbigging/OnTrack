@@ -20,3 +20,11 @@ export interface Goal {
   tasks: Task[];
   createdAt: number;
 }
+
+export interface UserAccount {
+  id: string;
+  displayName: string;
+  username: string;
+  email: string;
+  createdAt: number;
+}
