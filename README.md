@@ -78,24 +78,6 @@ OnTrack/
 └── README.md
 ```
 
-## Agent workflow
-
-This repo is maintained with OpenClaw agents.
-
-Hugo is Adam's OpenClaw developer agent for OnTrack and handles a significant amount of the implementation work in this repository.
-
-If you are interested in how this setup works, reach out to [AdamLinCodes](https://github.com/AdamLinCodes).
-
-Core rules:
-
-- Never push directly to `main`
-- Create a branch for each task or issue
-- Open a PR for every code or documentation change
-- Keep changes small and reviewable
-- Identify the agent clearly in external GitHub actions
-
-See `AGENTS.md` for the repo-specific operating rules.
-
 ## Documentation map
 
 - `README.md`: quick start and repo overview
