@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text } from "react-native";
 import Svg, { Polygon, Line, Circle, Text as SvgText } from "react-native-svg";
-import { Goal } from "../types";
-import { endOfDay, isAfter, isSameDay, isWithinInterval, startOfWeek, endOfWeek, differenceInCalendarDays } from "date-fns";
+import { Goal, Task } from "../types";
+import { endOfDay, isAfter, isWithinInterval, startOfWeek, endOfWeek, differenceInCalendarDays } from "date-fns";
 import { useTheme } from "../contexts/ThemeContext";
 import { getCustomFrequencyProgress } from "../store";
 
@@ -16,6 +16,29 @@ interface RadarChartProps {
 }
 
 const CHART_TITLE = "Goal Radar";
+
+export const getCurrentModeTaskScore = (
+  task: Task,
+  completionsThroughReferenceDate: Date[],
+  normalizedReferenceDate: Date
+): number => {
+  const weekStart = startOfWeek(normalizedReferenceDate, { weekStartsOn: 0 });
+  const weekEnd = endOfWeek(normalizedReferenceDate, { weekStartsOn: 0 });
+  const completionsThisWeek = completionsThroughReferenceDate.filter((completionDate) =>
+    isWithinInterval(completionDate, { start: weekStart, end: weekEnd })
+  ).length;
+
+  if (task.frequency === "daily") {
+    return Math.min(1, completionsThisWeek / 7);
+  }
+
+  if (task.frequency === "weekly") {
+    return Math.min(1, completionsThisWeek);
+  }
+
+  const progress = getCustomFrequencyProgress(task, normalizedReferenceDate);
+  return progress.target > 0 ? Math.min(1, progress.completed / progress.target) : 0;
+};
 
 const getDailyTrendScore = (completionDates: Date[], startDate: Date, referenceDate: Date) => {
   const days = Math.max(1, differenceInCalendarDays(referenceDate, startDate) + 1);
@@ -123,20 +146,7 @@ export default function RadarChart({ goals, size = 200, referenceDate = new Date
         }
 
         if (mode === "current") {
-          if (task.frequency === "daily") {
-            return completionsThroughReferenceDate.some((completionDate) => isSameDay(completionDate, normalizedReferenceDate)) ? 1 : 0;
-          }
-
-          if (task.frequency === "weekly") {
-            const weekStart = startOfWeek(normalizedReferenceDate, { weekStartsOn: 0 });
-            const weekEnd = endOfWeek(normalizedReferenceDate, { weekStartsOn: 0 });
-            return completionsThroughReferenceDate.some((completionDate) =>
-              isWithinInterval(completionDate, { start: weekStart, end: weekEnd })
-            ) ? 1 : 0;
-          }
-
-          const progress = getCustomFrequencyProgress(task, normalizedReferenceDate);
-          return progress.target > 0 ? Math.min(1, progress.completed / progress.target) : 0;
+          return getCurrentModeTaskScore(task, completionsThroughReferenceDate, normalizedReferenceDate);
         }
 
         if (task.frequency === "daily") {
