@@ -20,16 +20,40 @@ export default function NewGoalScreen({ navigation }: NewGoalProps) {
   const addGoal = useStore((s) => s.addGoal);
   const [title, setTitle] = React.useState("");
   const [target, setTarget] = React.useState("");
+  const [titleError, setTitleError] = React.useState("");
   const { theme } = useTheme();
 
+  const handleTitleChange = (nextTitle: string) => {
+    setTitle(nextTitle);
+
+    if (nextTitle.trim()) {
+      setTitleError("");
+    }
+  };
+
+  const handleCreateGoal = () => {
+    if (title.trim()) {
+      void haptics.success();
+      addGoal(title.trim(), target.trim() || undefined);
+      navigation.goBack();
+      return;
+    }
+
+    setTitleError("Enter a goal title.");
+    void haptics.error();
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={["bottom", "left", "right"]}>
       <View style={{ padding: 16, gap: 12 }}>
         <LabeledTextField
           label="Goal Title"
           placeholder="e.g., Fitness"
           value={title}
-          onChangeText={setTitle}
+          onChangeText={handleTitleChange}
+          errorText={titleError || undefined}
+          returnKeyType="done"
+          onSubmitEditing={handleCreateGoal}
         />
 
         <LabeledTextField
@@ -40,16 +64,7 @@ export default function NewGoalScreen({ navigation }: NewGoalProps) {
         />
 
         <Pressable
-          onPress={() => {
-            if (title.trim()) {
-              void haptics.success();
-              addGoal(title.trim(), target.trim() || undefined);
-              navigation.goBack();
-              return;
-            }
-
-            void haptics.error();
-          }}
+          onPress={handleCreateGoal}
           style={{ backgroundColor: theme.primary, padding: 12, borderRadius: 10 }}
         >
           <Text

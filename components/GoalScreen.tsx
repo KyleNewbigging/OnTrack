@@ -41,7 +41,9 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
   const [isEditingGoalDetails, setIsEditingGoalDetails] = React.useState(false);
   const [goalTitleDraft, setGoalTitleDraft] = React.useState(goal.title);
   const [goalTargetDraft, setGoalTargetDraft] = React.useState(goal.target ?? "");
+  const [goalTitleError, setGoalTitleError] = React.useState("");
   const [isReorderingTasks, setIsReorderingTasks] = React.useState(false);
+  const [taskTitleError, setTaskTitleError] = React.useState("");
 
   if (!goal) return <Text>Not found</Text>;
 
@@ -49,6 +51,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
     if (!isEditingGoalDetails) {
       setGoalTitleDraft(goal.title);
       setGoalTargetDraft(goal.target ?? "");
+      setGoalTitleError("");
     }
   }, [goal.title, goal.target, isEditingGoalDetails]);
 
@@ -57,6 +60,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
     const trimmedTarget = goalTargetDraft.trim();
 
     if (!trimmedTitle) {
+      setGoalTitleError("Enter a goal title.");
       void haptics.error();
       return;
     }
@@ -66,6 +70,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
       target: trimmedTarget ? trimmedTarget : null,
     });
     void haptics.success();
+    setGoalTitleError("");
     setIsEditingGoalDetails(false);
   };
 
@@ -92,6 +97,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
 
   const resetTaskEditor = () => {
     setTaskTitle("");
+    setTaskTitleError("");
     setFrequency("daily");
     setCustomFrequency({ type: "weekly", target: 3 });
     setEditingTaskId(null);
@@ -118,6 +124,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
     const trimmedTitle = taskTitle.trim();
 
     if (!trimmedTitle) {
+      setTaskTitleError("Enter a task title.");
       void haptics.error();
       return;
     }
@@ -235,14 +242,19 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
             <>
               <TextInput
                 value={goalTitleDraft}
-                onChangeText={setGoalTitleDraft}
+                onChangeText={(text) => {
+                  setGoalTitleDraft(text);
+                  if (text.trim()) {
+                    setGoalTitleError("");
+                  }
+                }}
                 style={{
                   flex: 1,
                   fontSize: 22,
                   fontWeight: "800",
                   color: theme.text,
                   borderWidth: 1,
-                  borderColor: theme.primary,
+                  borderColor: goalTitleError ? theme.danger : theme.primary,
                   borderRadius: 10,
                   paddingHorizontal: 12,
                   paddingVertical: 8,
@@ -258,6 +270,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 onPress={saveGoalDetails}
                 hitSlop={8}
                 style={{ padding: 6 }}
+                accessibilityLabel="Save goal details"
               >
                 <Ionicons name="checkmark-outline" size={20} color={theme.primary} />
               </Pressable>
@@ -266,10 +279,12 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                   void haptics.tap();
                   setGoalTitleDraft(goal.title);
                   setGoalTargetDraft(goal.target ?? "");
+                  setGoalTitleError("");
                   setIsEditingGoalDetails(false);
                 }}
                 hitSlop={8}
                 style={{ padding: 6 }}
+                accessibilityLabel="Cancel goal editing"
               >
                 <Ionicons name="close-outline" size={20} color={theme.textSecondary} />
               </Pressable>
@@ -295,12 +310,16 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                   borderWidth: 1,
                   borderColor: theme.border,
                 }}
+                accessibilityLabel="Edit goal details"
               >
                 <Ionicons name="create-outline" size={16} color={theme.textSecondary} />
               </Pressable>
             </>
           )}
         </View>
+        {isEditingGoalDetails && goalTitleError ? (
+          <Text style={{ color: theme.danger, fontSize: 13, marginTop: -2 }}>{goalTitleError}</Text>
+        ) : null}
         {isEditingGoalDetails ? (
           <View style={{ gap: 8 }}>
             <TextInput
@@ -785,11 +804,26 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
               <TextInput
                 placeholder="e.g., Take creatine"
                 value={taskTitle}
-                onChangeText={setTaskTitle}
-                style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 8, padding: 10, backgroundColor: theme.background, color: theme.text }}
+                onChangeText={(text) => {
+                  setTaskTitle(text);
+                  if (text.trim()) {
+                    setTaskTitleError("");
+                  }
+                }}
+                style={{
+                  borderWidth: 1,
+                  borderColor: taskTitleError ? theme.danger : theme.border,
+                  borderRadius: 8,
+                  padding: 10,
+                  backgroundColor: theme.background,
+                  color: theme.text,
+                }}
                 placeholderTextColor={theme.textSecondary}
                 autoFocus={true}
               />
+              {taskTitleError ? (
+                <Text style={{ color: theme.danger, fontSize: 13, marginTop: -2 }}>{taskTitleError}</Text>
+              ) : null}
               <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
                 {(["once", "daily", "weekly", "custom"] as Frequency[]).map((f) => (
                   <Pressable
@@ -918,6 +952,7 @@ export default function GoalScreen({ navigation, route }: GoalProps) {
                 <Pressable
                   onPress={submitTaskEditor}
                   style={{ flex: 1, backgroundColor: theme.primary, padding: 10, borderRadius: 8 }}
+                  accessibilityLabel={editingTaskId ? "Save task" : "Add task"}
                 >
                   <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>{editingTaskId ? "Save" : "Add"}</Text>
                 </Pressable>
